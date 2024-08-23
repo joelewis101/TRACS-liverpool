@@ -1,4 +1,4 @@
-# TRACS database structure and data extraction scripts
+# TRACS database structure and data cleaning strategy
 
 The TRACS database structure reflects the sampling but is probably not ideal for
 analysis. The sampling and database structure and how that relates to these
@@ -7,7 +7,8 @@ scripts is outlined here.
 ## TRACS sampling structure
 
 * Each location is sampled for two weeks; in the redcap database, this is a
-"visit"
+"visit"; participants can be sampled in multiple visits if they are still in the
+sampling location,
 * Participants are consented into the study at a baseline redcap event, which includes
   the following forms
     + Demographics
@@ -15,7 +16,7 @@ scripts is outlined here.
     + Consent form 
     + Consultee form
 * These forms are only completed once , at recruitment
-* At each sampling round (called visit 1 ...5 and eacha redcap event), the following forms are completed:
+* At each sampling round (called visit 1 ...5 - each is a redcap event), the following forms are completed:
   + Care dependency score
   + Clinical frailty score
   + Antibiotic exposure (one form for each exposure)
@@ -34,22 +35,36 @@ inbetween visits); they had an extra "Enhanced sampling" event with the forms:
 ## Data extraction
 
 The aim is to get the data into a number of long-format tables where each table
-reflects one aspect of the study. The scripts generate the following data
+reflects one aspect of the study. The scripts generate the following data tables
+(right side of diagram below) as CSVs from the recap tables (left side of diagram below), where the tables contain the following data:
+
+* Demographics: Patient demographics, proxy measures of SES (last domiciliary
+postcode, educational status)
+* CDS: Care dependence score and date (can be asked multiple times)
+* CFS: Clinical fraily score and date (can be asked multiple times)
+* Exposures: Current PPI use, current medical device in situ (catheter etc) travel, animal exposure last 3 months
+* Location: Location, date asked
+* Sampling: Sample ID, type of sample
+* Admission: Date of admission to current location and where admitted from; can
+  be asked multiple times though is only asked once per visit, so some data will
+  be repeated here
+* Discharge: Date asked, still present in sampling area (yes/no), if no, where
+discharged to and date.
 
 ```mermaid
 flowchart LR
-A[Demograophics] --> B[Demographics];
+``A[Demograophics] --> B[demographics];
 C[CDS] --> D[CDS];
 E[CFS] --> F[CFS];
-G[Week A] --> H[Exposures];
-G[Week A] --> H[Location];
-A[Demographics] --> H[Location];
-I[Week B] --> H[Location];
+G[Week A] --> H[lxposures];
+G[Week A] --> H[location];
+A[Demographics] --> H[location];
+I[Week B] --> H[location];
 J[Sampling] --> H[Location];
-K[Enhanced sampling] --> H[Location];
-K[Sampling] --> L[Samples];
-M[Enhanced sampling] --> L[Samples];
-```
+K[Enhanced sampling] --> H[location];
+J[Sampling] --> L[samples];
+G[Week A] --> N[admission];
+O[End of visit] --> P[end_of_visit];`
 
 
 

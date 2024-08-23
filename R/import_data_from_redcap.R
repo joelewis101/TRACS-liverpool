@@ -14,6 +14,7 @@ outpath <- "data/raw/"
 cat(datetime, "\n")
 cat("Loading TRACS data from redcap database at", url, "\n")
 cat("Saving files to ", outpath, "\n")
+cat(system(paste0("md5 ", here("R/import_data_from_redcap.R"))))
 
 cat("Demographics\n")
 formData <- list(
@@ -23,7 +24,8 @@ formData <- list(
   format = "csv",
   type = "flat",
   csvDelimiter = "",
-  "fields[0]" = "capacity",
+  "fields[0]" = "date_of_approach",
+  "fields[1]" = "capacity",
   "forms[0]" = "demographics",
   rawOrLabel = "label",
   rawOrLabelHeaders = "raw",
@@ -254,4 +256,15 @@ response <- httr::POST(url, body = formData, encode = "form")
 result <- httr::content(response)
 write_csv(result, here(paste0(outpath, "withdrawal", datetime, ".csv")))
 cat("---------------------\n")
-
+# data dictionary
+cat("Data dictionary\n")
+formData <- list(
+  "token" = system(token_fetch_string, intern = TRUE),
+  content = "metadata",
+  format = "csv",
+  returnFormat = "csv"
+)
+response <- httr::POST(url, body = formData, encode = "form")
+result <- httr::content(response)
+write_csv(result, here(paste0(outpath, "data_dictionary", datetime, ".csv")))
+cat("----------------------\n")
