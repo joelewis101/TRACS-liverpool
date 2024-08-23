@@ -37,7 +37,7 @@ The aim is to get the data into a number of long-format tables where each table
 reflects one aspect of the study. The scripts generate the following data
 
 ```mermaid
-
+graph TD
 A[Demograophics] --> B[Demographics];
 B[CDS] -> B[CDS];
 C[CFS] -> D[CFS];
