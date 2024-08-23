@@ -37,18 +37,18 @@ The aim is to get the data into a number of long-format tables where each table
 reflects one aspect of the study. The scripts generate the following data
 
 ```mermaid
-graph TD
+flowchart LR
 A[Demograophics] --> B[Demographics];
-B[CDS] -> B[CDS];
-C[CFS] -> D[CFS];
-E[Week A] --> F[Exposures];
-E[Week A] --> G[Location];
-A[Demographics] --> G[Location];
-H[Week B] --> G[Location];
-I[Sampling] --> G[Location];
-J[Enhanced sampling] --> G[Location];
-I[Sampling] --> K[Samples];
-J[Enhanced sampling] --> K[Samples];
+C[CDS] --> D[CDS];
+E[CFS] --> F[CFS];
+G[Week A] --> H[Exposures];
+G[Week A] --> H[Location];
+A[Demographics] --> H[Location];
+I[Week B] --> H[Location];
+J[Sampling] --> H[Location];
+K[Enhanced sampling] --> H[Location];
+K[Sampling] --> L[Samples];
+M[Enhanced sampling] --> L[Samples];
 ```
 
 
