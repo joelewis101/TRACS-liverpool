@@ -129,10 +129,16 @@ for (sample_file in sample_files) {
 
 
     qpcr_results_df <-
-      map(qpcr_results_list, \(x)
-      select(x, lab_id, species) |>
+
+    map(qpcr_results_list, \(x)
+      select(x, lab_id, species, ct_value) |>
         mutate(across(everything(), as.character))) |>
-      bind_rows()
+      bind_rows() |>
+      mutate(ct_value = if_else(!grepl("^[0-9]", ct_value), NA, ct_value),
+      ct_value = as.numeric(ct_value)) |>
+      mutate(species = if_else(ct_value > 30, NA, species)) |>
+      select(-ct_value)
+
 
     # some qpcrs are re runs from previous weeks
     # strategy for these is to pull them all out intoa seperate file and merge
