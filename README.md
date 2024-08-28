@@ -39,21 +39,21 @@ text access tokens lying around. Change the `token_fetch_string` string in
 
 See the file `data_structure.md` for a description of what the data clean script
 does to the redcap data. Either run it directly or run
-`clean_redcap_data.sh`which will save a logfile in `data/processed`
+`clean_redcap_data.sh` which will save a logfile in `data/processed`
 
 ## Downloading micro data
 
-See `data_structure.md` for a description of the way the micro data is stored.
-It's on the LSTM shared drive. The `collate_micro_data.R` script will download
-it if the drive is mounted (on a mac) and the `download_data` flag in the script
-is of what it is doing.
+See `data_structure.md` for a description of the way the micro data is stored
+and the structure of the data extractions. Raw data is on the LSTM shared drive.
+The `collate_micro_data.R` script will download it if the drive is mounted (on a
+mac) and the `download_data` flag in the script is `TRUE`.
 
 The following scripts will collate the micro results and environmental location
 data respectively:
 
 * `R/collate_micro_data.R` will save the micro results in
 `data/processed/micro_processedYYMMDD_HHMM` and will also output some data
-queries. The shell wrapper script will save its output as a logfile
+queries. The shell wrapper script will save its output as a logfile.
 * `R/collate_env_loc_data.R` will save the location data in
 `data/processed/micro_env_sample_locYYYYMMDD-HHMM.csv` - shell wrapper script
 saves logfile.

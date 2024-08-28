@@ -5,7 +5,11 @@ analysis. The sampling and database structure and how that relates to these
 scripts is outlined here. Clincial data is stored in a redcap database and micro
 data in excel sheets.
 
-## TRACS redcap sampling structure
+## REDCAP
+
+Clinical data is stored in a redcap database.
+
+### REDCAP sampling structure
 
 * Each location is sampled for two weeks; in the redcap database, this is a
 "visit"; participants can be sampled in multiple visits if they are still in the
@@ -33,12 +37,12 @@ inbetween visits); they had an extra "Enhanced sampling" event with the forms:
   + enhanced sampling (consent etc)
   + sample collection (sample ID and location)
 
-## Data extraction
+### Data extraction
 
 The aim is to get the data into a number of long-format tables where each table
 reflects one aspect of the study. The scripts generate the following data tables
 (right side of diagram below) as CSVs from the recap tables (left side of
-diagram below), where the tables contain the following data:
+diagram below), where the output tables contain the following data:
 
 * Demographics: Patient demographics, proxy measures of SES (last domiciliary
 postcode, educational status)
@@ -66,7 +70,7 @@ J[Sampling] --> H[Location];
 K[Enhanced sampling] --> H[location];
 J[Sampling] --> L[samples];
 G[Week A] --> N[admission];
-O[End of visit] --> P[end_of_visit];`
+O[End of visit] --> P[end_of_visit];
 
 
 ```
@@ -89,4 +93,15 @@ MALDI was only done for some samples.
 The environmental location data (which links TRACS sample ID to study site
 location) is in a separate sheet usually at `location/visit/week/DD.MM.YY
 enviornmental samples` or similar. 
+
+The data extraction scripts (see `README.md`) will pull these data out into two
+tables:
+
+* `micro_processed` - sample testing results with tracs ID (which links to other
+  tables including the "samples" table from redcap and the environmental
+location table below), all the micro test results and an interpretation of
+whether e coli is present (`e_coli = ["Yes", "No"]`) or K. pneumo is present
+(`k_pneumo = ["Yes", "No]`)
+* `micro_env_sample_loc` - this links the TRACS sample ID to study location with
+  an ID that corresponds to the location on the maps.
 
