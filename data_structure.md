@@ -2,9 +2,10 @@
 
 The TRACS database structure reflects the sampling but is probably not ideal for
 analysis. The sampling and database structure and how that relates to these
-scripts is outlined here.
+scripts is outlined here. Clincial data is stored in a redcap database and micro
+data in excel sheets.
 
-## TRACS sampling structure
+## TRACS redcap sampling structure
 
 * Each location is sampled for two weeks; in the redcap database, this is a
 "visit"; participants can be sampled in multiple visits if they are still in the
@@ -53,7 +54,7 @@ discharged to and date.
 
 ```mermaid
 flowchart LR
-``A[Demograophics] --> B[demographics];
+A[Demogrophics] --> B[demographics];
 C[CDS] --> D[CDS];
 E[CFS] --> F[CFS];
 G[Week A] --> H[lxposures];
@@ -67,4 +68,16 @@ G[Week A] --> N[admission];
 O[End of visit] --> P[end_of_visit];`
 
 
+```
 
+## Micro data structure
+
+Microbiology data is stored in a nested directory structure in the TRACS shared
+drive `location/visit/week/DD.MM.YY TRACS sample log.xslx`. Naming can change
+form sheet to sheet. Each spreadsheet has a number of panes relating to each
+step of the micro workflow. The ones used for data extraction are:
+
+* Receipt: links TRACS sample ID to lab ID
+* Plating: has culture results
+* qpcr results
+* maldi results

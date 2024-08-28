@@ -38,5 +38,14 @@ text access tokens lying around. Change the `token_fetch_string` string in
 ## Cleaning up
 
 See the file `data_structure.md` for a description of what the data clean script
-does. Either run it directly or run `clean_redcap_data.sh`which will save a
-logfile in `data/processed`
+does to the redcap data. Either run it directly or run
+`clean_redcap_data.sh`which will save a logfile in `data/processed`
+
+## Downloading micro data
+
+See `data_structure.md` for a description of the way the micro data is stored.
+It's on the shared drive. The `collate_micro_data.R` script will download it if
+the drive is mounted (on a mac) and the `download_data` flag in the script is
+set to `TRUE`. The script will collate and save the micro data in
+`data/processed/`. As above, run the shell script wrapper to get it to save logs
+of what it is doing.
