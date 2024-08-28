@@ -1,7 +1,15 @@
 library(tidyverse)
 library(readxl)
 library(here)
-# need to have tracs shared drive mounted
+
+# assumptions of this cleaning script
+
+# any record in qpcr sheet has both E coil and K pn PCRS performed
+# if any are positive - interpret as positive
+# if it is repeated - use the repeat value
+# some repeat values dont match the original - output these as queries
+
+
 
 datetime <- format(Sys.time(), "%Y%m%d-%H%M")
 
@@ -9,6 +17,8 @@ escape_spaces <- function(str) {
   return(gsub(" ", "\\\\\ ", str))
 }
 
+# need to have tracs shared drive mounted
+# pull data from shared drive
 download_data <- FALSE
 
 cat("collate_micro_data.R run at", datetime, "\n")
@@ -47,6 +57,7 @@ sheet_names <-
 
 # iterate through each sheet and extract and merge
 # reciept, plating, qpcr, and maldi results
+
 i <- 1
 listout <- list()
 prev_samples_listout <- list()
@@ -133,7 +144,15 @@ for (sample_file in sample_files) {
       mutate(location = location, week_of_pcr = week)
 
     cat("\n[",i, "]", nrow(prev_weeks_samples), "that look like they are qPCR reruns - removing to add back in at the end\n")
+    
+    cat(
+  paste0("[ ",i, " ] Number of non-control records that don't start with a number or i , and will be dropped: ", qpcr_results_df |>
+        filter(!is.na(lab_id), !grepl("control", lab_id), !grepl("^[0-9]|^i", lab_id)) |>
+        nrow(),
+      "\n"
+    ))
 
+    # manually checked these funny lab_ids
     # checked out i = 2
     # Aintree/Visit 1_W29_8.05.23/Week 4_15.05.23/150523 TRACS sample spreadsheet.xlsx
     # there are a number of samples marked #5 chrom etc - I have ignored  
@@ -154,12 +173,7 @@ for (sample_file in sample_files) {
 # Whiston/Visit 1_6.11.23/Week 21_6.11.23/6.11.23 TRACS sample log.xlsx
     # ther are lots of samples here where lab id starts BS or P - what are they?
 
-    cat(
-  paste0("[ ",i, " ] Number of non-control records that don't start with a number or i , and will be dropped: ", qpcr_results_df |>
-        filter(!is.na(lab_id), !grepl("control", lab_id), !grepl("^[0-9]|^i", lab_id)) |>
-        nrow(),
-      "\n"
-    ))
+    # Emailed Esther/claudia with queries 2024-08-24
 
     qpcr_results_df <-
       qpcr_results_df |>
@@ -190,10 +204,6 @@ for (sample_file in sample_files) {
         select(-qpcr_undetermined)
     }
 
-
-
-
-
     out_df <-
       out_df |>
       full_join(
@@ -206,6 +216,7 @@ for (sample_file in sample_files) {
   cat("\n[",i, "] MALDI result sheets: ", maldi_sheets, "\n")
 
   if (length(maldi_sheets > 1)) {
+    # manual munging for funny sheets
     if (sample_file %in% c(
       "Estuary house/Visit 5_28.05.24/Week 45_28.05.24/28.05.24 TRACS sample log.xlsx",
       "Estuary house/Visit 5_28.05.24/Week 46_03.06.24/03.06.24 TRACS sample log.xlsx"
@@ -287,10 +298,6 @@ for (sample_file in sample_files) {
         mutate(across(everything(), \(x) if_else(is.na(x), "No", x)))
     }
 
-
-
-
-
     out_df <-
       out_df |>
       full_join(
@@ -307,6 +314,7 @@ for (sample_file in sample_files) {
     mutate(location = location) |>
     relocate(location, .before = everything())
 
+  # records with no TRACS_id - drop for now, need to resolve
   qpcr_data_queries <-
     bind_rows(
       tibble(
@@ -328,7 +336,6 @@ for (sample_file in sample_files) {
         comment = "No lab id 81 in reciept sheet"
       )
     )
-
 
   out_df <-
     out_df |>
@@ -384,7 +391,8 @@ repeat_samples_data_query <-
     join_by(week == week_of_sample, lab_id == lab_id)
   ) |>
   filter(
-    (!is.na(add_qpcr_e_coli) & !is.na(qpcr_e_coli)) | !is.na(add_qpcr_k_pn) & !is.na(qpcr_k_pn)
+    (!is.na(add_qpcr_e_coli) & !is.na(qpcr_e_coli) | !is.na(add_qpcr_k_pn) & !is.na(qpcr_k_pn)) &
+    (add_qpcr_e_coli != qpcr_e_coli | add_qpcr_k_pn != qpcr_k_pn)
   )
 
 cat("There are", nrow(repeat_samples_data_query), "samples that seem  to have different results fort a repeat pcr\n")
@@ -443,3 +451,18 @@ cat("Writing qpcr data queries to", outfile, "\n")
 write_csv(qpcr_data_queries, outfile)
 
 cat("Done!\n")
+
+# compare to esther's summary spreadsheet
+
+# out_df |> 
+#   filter(!is.na(scai_result), e_coli == "Yes") |>
+#   mutate(receipt_date = dmy(receipt_date)) |> 
+#   mutate(week_commencing = floor_date(receipt_date, unit = "week")) |>
+#   group_by(week_commencing) |>
+#   count() |>
+#   as.data.frame()
+#
+#
+# out_df |> mutate(receipt_date = dmy(receipt_date)) |> 
+#   mutate(week_commencing = floor_date(receipt_date, unit = "week")) |>
+#   filter(week_commencing == "2023-07-02")
