@@ -241,9 +241,14 @@ for (sample_file in sample_files) {
         map(maldi_sheets, \(x)
         read_xlsx(here("data/raw/Sampling data", sample_file), sheet = x) |>
           janitor::clean_names() |>
+          rename_with(\(x) if_else(grepl("date",x), "date_tested", x)) |>
           mutate(across(everything(), as.character)) |>
           rename_with(\(x) if_else(grepl("species", x), "maldi_id", x)) |>
-          separate_longer_delim(maldi_id, delim = " + "))
+          filter(!is.na(date_tested)) |> 
+          fill(lab_id) |>
+          separate_longer_delim(maldi_id, delim = " + ") |>
+          separate_longer_delim(maldi_id, delim = "\n") 
+      )
       map(maldi_results_list, \(x) print(head(x)))
     }
 
@@ -268,6 +273,7 @@ for (sample_file in sample_files) {
     maldi_results_other <-
       maldi_results_df |>
       mutate(maldi_id = gsub("Escherichia ", "E\\. ", maldi_id)) |>
+      mutate(maldi_id = gsub("Klebsiella pneumoniae", "K\\. pn", maldi_id)) |>
       filter(!grepl("K. pn|E. coli", maldi_id)) |>
       group_by(lab_id) |>
       summarise(maldi_other = paste(maldi_id, collapse = ";")) |>
@@ -276,6 +282,7 @@ for (sample_file in sample_files) {
     maldi_results_df <-
       maldi_results_df |>
       mutate(maldi_id = gsub("Escherichia ", "E\\. ", maldi_id)) |>
+      mutate(maldi_id = gsub("Klebsiella pneumoniae", "K\\. pn", maldi_id)) |>
       filter(grepl("K. pn|E. coli", maldi_id)) |>
       mutate(lab_id = unlist(map(lab_id, \(x) strsplit(x, " ")[[1]][1]))) |>
       mutate(maldi_id = paste0("maldi_", tolower(gsub("\\. ", "_", maldi_id)))) |>
