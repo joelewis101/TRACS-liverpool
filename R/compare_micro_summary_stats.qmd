@@ -1,0 +1,137 @@
+---
+title: TRACS micro data checks
+date: today
+date-format: "D MMMM YYYY"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Introduction
+
+This document compares the numebrs of TRACS samples from micro data extraction scripts to the summary
+spreadsheet.
+
+```{r setup} 
+
+library(tidyverse)
+library(here)
+library(readxl)
+library(kableExtra)
+library(janitor)
+
+download_data <- FALSE
+
+if (download_data) {
+  
+  system(
+    paste0(
+      "cp /Volumes/shared/TRACS/TRACS\\ data/Overall.xlsx ",
+      here("data/raw/Sampling\\ data/Overall.xlsx")
+    )
+  )
+
+}
+
+df_extract <- read_csv(
+  here("data/processed", list.files(here("data/processed"), pattern = "micro_processed"))
+)
+
+df_summary <- read_xlsx(
+here("data/raw/Sampling data/Overall.xlsx"),
+  sheet = 1, 
+range = "A1:F51"
+) |>
+janitor::clean_names() |>
+  mutate(week_commencing = as_date(week_commencing),
+    week_commencing = if_else(week_commencing == dmy("17-07-2024"),
+dmy("17-06-2024"), week_commencing)) 
+
+
+df_summary2 <- read_xlsx(
+here("data/raw/Sampling data/Overall.xlsx"),
+  sheet = 2, 
+range = "A1:G251"
+) |>
+janitor::clean_names() 
+
+
+
+```
+
+# Results
+
+## Total number of swabs
+
+```{r totals} 
+
+outtbl <-
+full_join(
+df_summary |>
+  mutate(total = rowSums(across(where(is.numeric)), na.rm = TRUE),
+    week_commencing = as_date(floor_date(week_commencing, unit = "week"))),
+df_extract |> 
+  filter(!is.na(scai_result)) |>
+  mutate(receipt_date = dmy(receipt_date)) |> 
+  mutate(week_commencing = floor_date(receipt_date, unit = "week")) |>
+  group_by(week_commencing) |>
+  count(name = "extract_n"),
+  by = join_by(week_commencing)) |>
+  mutate(across(where(is.numeric), \(x) if_else(is.na(x), 0, x)))
+
+outtbl |>
+  kbl() |>
+    kable_styling(bootstrap_options = c("striped", "hover")) |>
+    row_spec(which(outtbl$extract_n != outtbl$total), bold = TRUE, color = "white", background = "red")
+
+
+
+
+```
+
+## E coli and kleb
+
+```{r esco-and-kleb} 
+
+outtbl2 <-
+full_join( 
+  df_summary2 |>
+    select(-overall) |>
+    mutate(rectal_swabs = as.numeric(rectal_swabs)) |>
+    fill(week_commencing) |>
+    filter(week_commencing != "Total") |> 
+    mutate(week_commencing = 
+    if_else(grepl("\\.", week_commencing),
+    dmy(week_commencing),
+    excel_numeric_to_date(as.numeric(week_commencing)))) |>
+  mutate(week_commencing = if_else(week_commencing == dmy("02-09-2023"),
+dmy("02-10-2023"), week_commencing)) |>
+    mutate(total = rowSums(across(where(is.numeric)), na.rm = TRUE)) |>
+    select(week_commencing, result, total) |>
+    pivot_wider(id_cols = week_commencing, names_from = result, 
+    values_from = total) |>
+    janitor::clean_names() |>
+    select(week_commencing, e_coli_confirmed, k_pneumoniae_confirmed) |>
+    mutate(week_commencing = as_date(floor_date(week_commencing, unit = "week"))),
+  df_extract |> 
+    filter(!is.na(scai_result)) |>
+    mutate(receipt_date = dmy(receipt_date)) |> 
+    mutate(week_commencing = floor_date(receipt_date, unit = "week")) |>
+    group_by(week_commencing) |>
+    summarise(
+      extract_e_coli = sum(e_coli == "Yes"),
+      extract_k_pn = sum(k_pn == "Yes")
+      ),
+  by = join_by(week_commencing)
+  ) |>  mutate(across(where(is.numeric), \(x) if_else(is.na(x), 0, x)))
+
+outtbl2 |>
+  kbl() |>
+    kable_styling(bootstrap_options = c("striped", "hover")) |>
+    row_spec(which(outtbl2$e_coli_confirmed != outtbl2$extract_e_coli), bold = TRUE, color = "white", background = "red") |>
+    row_spec(which(outtbl2$k_pneumoniae_confirmed != outtbl2$extract_k_pn), bold = TRUE, color = "white", background = "red") 
+
+
+```
