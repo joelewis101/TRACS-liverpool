@@ -37,7 +37,7 @@ if (download_data) {
 
 
 sample_files <-
-  list.files(here("data/raw/Sampling data/"), pattern = "TRACS sample", recursive = TRUE)
+  list.files(here("data/raw/Sampling data/"), pattern = "TRACS [s|S]ample", recursive = TRUE)
 
 sample_files <-
   sample_files[!grepl("~\\$|Trial|break", sample_files)]
@@ -255,7 +255,9 @@ for (sample_file in sample_files) {
       map(maldi_results_list, \(x)
       select(x, lab_id, maldi_id)) |>
       bind_rows() |>
-      filter(!is.na(lab_id), !grepl("control", lab_id), grepl("^[0-9]|^i", lab_id))
+      filter(!is.na(lab_id), !grepl("control", lab_id), grepl("^[0-9]|^i", lab_id)) |>
+      mutate(lab_id = unlist(map(lab_id, \(x) strsplit(x, " ")[[1]][1]))) |>
+      mutate(lab_id = gsub(",", "", lab_id)) 
 
     maldi_results_other <-
       maldi_results_df |>
@@ -287,7 +289,7 @@ for (sample_file in sample_files) {
 
     if (nrow(maldi_results_other) == 0) {
       maldi_results_df <-
-        mutate(maldi_results_df, maldi_k_other = "No")
+        mutate(maldi_results_df, maldi_other = "No")
     } else {
       maldi_results_df <-
         maldi_results_df |>
