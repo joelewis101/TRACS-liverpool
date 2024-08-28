@@ -37,7 +37,8 @@ inbetween visits); they had an extra "Enhanced sampling" event with the forms:
 
 The aim is to get the data into a number of long-format tables where each table
 reflects one aspect of the study. The scripts generate the following data tables
-(right side of diagram below) as CSVs from the recap tables (left side of diagram below), where the tables contain the following data:
+(right side of diagram below) as CSVs from the recap tables (left side of
+diagram below), where the tables contain the following data:
 
 * Demographics: Patient demographics, proxy measures of SES (last domiciliary
 postcode, educational status)
@@ -73,11 +74,19 @@ O[End of visit] --> P[end_of_visit];`
 ## Micro data structure
 
 Microbiology data is stored in a nested directory structure in the TRACS shared
-drive `location/visit/week/DD.MM.YY TRACS sample log.xslx`. Naming can change
-form sheet to sheet. Each spreadsheet has a number of panes relating to each
-step of the micro workflow. The ones used for data extraction are:
+drive. Sample test results are at `location/visit/week/DD.MM.YY TRACS sample
+log.xslx`. Naming can change form sheet to sheet. Each spreadsheet has a number
+of panes relating to each step of the micro workflow. The ones used for data
+extraction are:
 
 * Receipt: links TRACS sample ID to lab ID
 * Plating: has culture results
 * qpcr results
 * maldi results
+
+MALDI was only done for some samples.
+
+The environmental location data (which links TRACS sample ID to study site
+location) is in a separate sheet usually at `location/visit/week/DD.MM.YY
+enviornmental samples` or similar. 
+

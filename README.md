@@ -44,8 +44,16 @@ does to the redcap data. Either run it directly or run
 ## Downloading micro data
 
 See `data_structure.md` for a description of the way the micro data is stored.
-It's on the shared drive. The `collate_micro_data.R` script will download it if
-the drive is mounted (on a mac) and the `download_data` flag in the script is
-set to `TRUE`. The script will collate and save the micro data in
-`data/processed/`. As above, run the shell script wrapper to get it to save logs
-of what it is doing.
+It's on the LSTM shared drive. The `collate_micro_data.R` script will download
+it if the drive is mounted (on a mac) and the `download_data` flag in the script
+is of what it is doing.
+
+The following scripts will collate the micro results and environmental location
+data respectively:
+
+* `R/collate_micro_data.R` will save the micro results in
+`data/processed/micro_processedYYMMDD_HHMM` and will also output some data
+queries. The shell wrapper script will save its output as a logfile
+* `R/collate_env_loc_data.R` will save the location data in
+`data/processed/micro_env_sample_locYYYYMMDD-HHMM.csv` - shell wrapper script
+saves logfile.
