@@ -25,7 +25,7 @@ the repo.
 ## Downloading data from redcap
 
 * request an API token.   
-* Encrypt with gpg or your tool of choice. Friends don't friends leave plain
+* Encrypt with gpg or your tool of choice. Friends don't let friends leave plain
 text access tokens lying around. Change the `token_fetch_string` string in
 `R/import_data_from_redcap.R` to be a terminal call to return the token string.
 * Either:
