@@ -277,7 +277,6 @@ if (length(weeka_file) != 1) {
 }
 
 # samples
-
 if (length(sample_file) != 1) {
   stop("Wrong number of sample files in data/raw")
 } else {
@@ -289,7 +288,12 @@ if (length(sample_file) != 1) {
     janitor::clean_names() |>
     filter(!is.na(date_sample_collected)) |>
     mutate(record_id = as.numeric(record_id)) |>
-    arrange(record_id, date_sample_collected)
+    arrange(record_id, date_sample_collected) |>
+    mutate(
+      sample_number = gsub("TRA*CS_2_PS[_|-]", "", toupper(sample_number)),
+      sample_number = gsub("PS[_|-]|TRACS_2_", "", sample_number),
+      sample_number = paste0("TRACS_2_PS_", sample_number)
+    )
   outfile <- paste0(
     here("data/processed/"), "samples_processed", datetime, ".csv"
   )
