@@ -57,3 +57,15 @@ queries. The shell wrapper script will save its output as a logfile.
 * `R/collate_env_loc_data.R` will save the location data in
 `data/processed/micro_env_sample_locYYYYMMDD-HHMM.csv` - shell wrapper script
 saves logfile.
+
+## TODO
+
+Listed here are data cleaning tasks that still need to be done
+
+[ ] There are duplicated sample IDs (TRACS_2_ES_XXXX) in the produced
+`env_sample_loc` files, recording the locations of swab collections.
+There are no duplictaions in the `micro_processed` files. Presumably this means
+that the lab ID was incorrectly recorded on the environmental spreadsheets.
+This needs reconciling / cleaning. A workaround for now is to match by TRACS_ID
+and date between `micro_processed` and `env_sample_loc` and remove any that
+don't match both.
