@@ -22,6 +22,9 @@ the repo.
         └── redcap_token.txt.gpg
 ```
 
+Also added bioinformatics analysis in the `bioinformatics` folder - see further
+READMEs there
+
 ## Downloading data from redcap
 
 * request an API token.   
