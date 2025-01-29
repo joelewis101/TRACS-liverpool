@@ -9,7 +9,8 @@ As of 29/1 this runs a reproducible snakemake pipeline to run snippy
 
 ## Run 
 
-`snakemake -s Snakemake_snippy.smk`
+`cd snakemake`  
+`snakemake -s Snakemake_snippy.smk`  
 
 It uses the `configJL.yaml` file and the data in the `data/` folder - put reads
 in here
