@@ -1,0 +1,61 @@
+configfile:
+	"configJL.yaml"
+R1_suff = config['R1_suffix']
+R2_suff = config['R2_suffix']
+sample_ids, = glob_wildcards(config['reads'] + "/{sample}"+R1_suff)
+outputdir = config['output']
+
+print(sample_ids,)
+
+rule all:
+    input:
+      expand("{output}/snps_out/{sample}_snps", sample=sample_ids, output=config['output'])
+
+rule snippy:
+    input:
+        reference = "Reference.fasta",
+        r1 = config['reads']+"/{sample}"+R1_suff,
+        r2 = config['reads']+"/{sample}"+R2_suff
+    output:
+        directory("snps_out/{sample}_snps")
+    log:
+        "{sample}_snippy.log"
+    shell:
+        "snippy --outdir {output} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
+
+#-------------------------------------------------------------------#
+#rule split_complex_var:
+#    input:
+#       raw = "{output}/snps_out/{sample}_snps/snps.raw.vcf",
+#       reference = "Reference.fasta"
+#    output:
+#       filtout = "{output}/vaf_files/{sample}.myfilt.vcf"
+#    shell:
+#        """
+#        bcftools view --include 'FMT/GT="1/1" && QUAL >=100 && FMT/DP >=10' {input.raw} |
+#        vt decompose_blocksub - | 
+#        vt normalize -r {input.reference} - > {output.filtout}
+#        """
+#-------------------------------------------------------------------#
+#rule depth_calc:
+    #input:
+       #"snps_out/{sample}_snps/snps.bam"
+    #output:
+       #"snps_out/{sample}.mydepth.tsv"
+    #shell:
+       #"samtools depth -aa -q 13 -Q 60 -d 0 {input} > {output}"
+
+#-------------------------------------------------------------------# 
+
+#rule pull_out_var_calc_VAF:
+    #input:
+    #"{sample}.myfilt.vcf"
+    #output:
+    #"{sample}.myVAF.tsv"
+    #shell:
+    #"""
+    #bcftools +fill-tags {input} -- -t 'FORMAT/VAF:1=float(FORMAT/AO / (FORMAT/AO + FORMAT/RO))' | 
+    #bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%VAF]\t[%AO]\t[%RO]\t[%DP]' > {output}
+    #"""
+
+#-------------------------------------------------------------------# 
