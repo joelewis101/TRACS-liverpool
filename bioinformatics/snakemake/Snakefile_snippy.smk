@@ -2,9 +2,10 @@ configfile:
 	"configJL.yaml"
 R1_suff = config['R1_suffix']
 R2_suff = config['R2_suffix']
+print("TRACS msweep pipeline v0.1")
 print("Read directory: " + config['reads'])
 print("Read suffixes: " + R1_suff + ", " + R2_suff)
-sample_ids, = glob_wildcards("data/{sample}_1.fastq.gz")
+sample_ids, = glob_wildcards("data/{sample}"+R1_suff)
 outputdir = config['output']
 print("Found sample IDs: ", sample_ids)
 
