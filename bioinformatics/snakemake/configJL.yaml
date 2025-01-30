@@ -2,7 +2,7 @@
 #Path to read directory
 reads: data
 #File extension that comes after sample names
-R1_suffix: _R1_trimmed.fastq.gz
-R2_suffix: _R2_trimmed.fastq.gz
+R1_suffix: _1.fastq.gz
+R2_suffix: _2.fastq.gz
 #Path to output
 output:  pipe_test

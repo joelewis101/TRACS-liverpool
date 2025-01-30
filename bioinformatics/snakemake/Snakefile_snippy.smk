@@ -15,7 +15,7 @@ rule all:
 
 rule snippy:
     input:
-        reference = "Reference.fasta",
+        reference = "data/U00096.3.fasta",
         r1 = config['reads']+"/{sample}"+R1_suff,
         r2 = config['reads']+"/{sample}"+R2_suff
     output:

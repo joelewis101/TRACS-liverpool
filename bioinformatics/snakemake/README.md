@@ -5,7 +5,8 @@ As of 29/1 this runs a reproducible snakemake pipeline to run snippy
 ## Put data in the right places
 
 * Read files in `data/`
-* Reference in `snakemake/` `as Reference.fa` 
+* the script `data/download_test_files.sh` will use `wget` to download some
+DASSIM E. coli reads and a K12 reference for testing
 
 ## Run 
 
