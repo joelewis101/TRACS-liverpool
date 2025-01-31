@@ -1,5 +1,5 @@
 configfile:
-	"configJL.yaml"
+	"config.yaml"
 R1_suff = config['R1_suffix']
 R2_suff = config['R2_suffix']
 sample_ids, = glob_wildcards(config['reads'] + "/{sample}"+R1_suff)
@@ -9,7 +9,11 @@ print(sample_ids,)
 
 rule all:
     input:
-      expand("{output}/snps_out/{sample}_snps", sample=sample_ids, output=config['output'])
+      expand("{outputdir}/snps_out/{sample}_snps", sample=sample_ids, outputdir=outputdir),
+      expand("{outputdir}/vaf_files/{sample}.myfilt.vcf", sample=sample_ids, outputdir=outputdir),
+      expand("{outputdir}/vaf_files/{sample}.mydepth.tsv", sample=sample_ids, outputdir=outputdir),
+      expand("{outputdir}/vaf_files/{sample}.myVAF.tsv", sample=sample_ids, outputdir=outputdir),
+      expand("{outputdir}/vaf_files/{sample}.allSNPS.tsv", sample=sample_ids, outputdir=outputdir)
 
 rule snippy:
     input:
@@ -17,45 +21,73 @@ rule snippy:
         r1 = config['reads']+"/{sample}"+R1_suff,
         r2 = config['reads']+"/{sample}"+R2_suff
     output:
-        directory("snps_out/{sample}_snps")
+        snps = directory("{outputdir}/snps_out/{sample}_snps")
+    priority:
+        10
     log:
-        "{sample}_snippy.log"
+        "{outputdir}/{sample}_snippy.log"
     shell:
-        "snippy --outdir {output} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
+        "snippy --outdir {output.snps} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
 #-------------------------------------------------------------------#
-#rule split_complex_var:
-#    input:
-#       raw = "{output}/snps_out/{sample}_snps/snps.raw.vcf",
-#       reference = "Reference.fasta"
-#    output:
-#       filtout = "{output}/vaf_files/{sample}.myfilt.vcf"
-#    shell:
-#        """
-#        bcftools view --include 'FMT/GT="1/1" && QUAL >=100 && FMT/DP >=10' {input.raw} |
-#        vt decompose_blocksub - | 
-#        vt normalize -r {input.reference} - > {output.filtout}
-#        """
+
+rule split_complex_var:
+    input:
+       raw = "{outputdir}/snps_out/{sample}_snps/snps.raw.vcf",
+       reference = "Reference.fasta"
+    output:
+       filt = "{outputdir}/vaf_files/{sample}.myfilt.vcf"
+    priority:
+       9
+    shell:
+        """
+        bcftools view --include 'FMT/GT="1/1" & QUAL>=100 & FMT/DP>=10' {input.raw} |
+        vt decompose_blocksub - |
+        vt normalize -r {input.reference} - > {output.filt}
+        """
 #-------------------------------------------------------------------#
-#rule depth_calc:
-    #input:
-       #"snps_out/{sample}_snps/snps.bam"
-    #output:
-       #"snps_out/{sample}.mydepth.tsv"
-    #shell:
-       #"samtools depth -aa -q 13 -Q 60 -d 0 {input} > {output}"
+
+rule depth_calc:
+    input:
+       bam = "{outputdir}/snps_out/{sample}_snps/snps.bam"
+    output:
+       depth = "{outputdir}/vaf_files/{sample}.mydepth.tsv"
+    priority:
+       9
+    shell:
+       "samtools depth -aa -q 13 -Q 60 -d 0 {input.bam} > {output.depth}"
+
+#-------------------------------------------------------------------#
+
+rule pull_out_var_calc_VAF:
+    input:
+       filt = "{outputdir}/vaf_files/{sample}.myfilt.vcf"
+    output:
+       vaf = "{outputdir}/vaf_files/{sample}.myVAF.tsv"
+    priority:
+       8
+    shell:
+        """
+        bcftools +fill-tags {input.filt} -- -t 'FORMAT/VAF:1=float(FORMAT/AO / (FORMAT/AO + FORMAT/RO))' | 
+        bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%VAF]\t[%AO]\t[%RO]\t[%DP]' > {output.vaf}
+        """
 
 #-------------------------------------------------------------------# 
 
-#rule pull_out_var_calc_VAF:
-    #input:
-    #"{sample}.myfilt.vcf"
-    #output:
-    #"{sample}.myVAF.tsv"
-    #shell:
-    #"""
-    #bcftools +fill-tags {input} -- -t 'FORMAT/VAF:1=float(FORMAT/AO / (FORMAT/AO + FORMAT/RO))' | 
-    #bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%VAF]\t[%AO]\t[%RO]\t[%DP]' > {output}
-    #"""
-
-#-------------------------------------------------------------------# 
+rule high_qual_hetsnps:
+    input:
+       raw = "{outputdir}/snps_out/{sample}_snps/snps.raw.vcf",
+       reference = "Reference.fasta"
+    output:
+       all_snps = "{outputdir}/vaf_files/{sample}.allSNPS.tsv"
+    priority:
+       9
+    shell:
+       """
+       bcftools view --include 'QUAL>=100' {input.raw} | 
+       vt decompose_blocksub - | 
+       vt normalize -r {input.reference} - | 
+       vt decompose -s - | 
+       bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%AO]\t[%RO]\t[%DP]' > {output.all_snps}
+       """
+#-------------------------------------------------------------------#
