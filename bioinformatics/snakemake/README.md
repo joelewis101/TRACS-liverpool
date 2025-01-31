@@ -16,4 +16,4 @@ DASSIM E. coli reads and a K12 reference for testing
 It uses the `configJL.yaml` file and the data in the `data/` folder - put reads
 in here
 
-The `Snakefile` is sarah's full pipeline - not yet fully working.
+The `Snakefile` is sarah's full pipeline - fully working on 31/01/2025.
