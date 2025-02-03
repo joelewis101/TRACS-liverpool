@@ -5,10 +5,18 @@ R2_suff = config['R2_suffix']
 sample_ids, = glob_wildcards(config['reads'] + "/{sample}"+R1_suff)
 outputdir = config['output']
 
-print(sample_ids,)
+print("TRACS msweep pipeline v0.1")
+print("Read directory: " + config['reads'])
+print("Read suffixes: " + R1_suff + ", " + R2_suff)
+print("Output directory: " + outputdir)
+sample_ids, = glob_wildcards("data/{sample}"+R1_suff)
+outputdir = config['output']
+print("Found sample IDs: ", sample_ids)
 
 rule all:
     input:
+      expand("{outputdir}/snps_out/{sample}_snps/snps.raw.vcf", sample=sample_ids, outputdir=outputdir),
+      expand("{outputdir}/snps_out/{sample}_snps/snps.bam", sample=sample_ids, outputdir=outputdir),
       expand("{outputdir}/snps_out/{sample}_snps", sample=sample_ids, outputdir=outputdir),
       expand("{outputdir}/vaf_files/{sample}.myfilt.vcf", sample=sample_ids, outputdir=outputdir),
       expand("{outputdir}/vaf_files/{sample}.mydepth.tsv", sample=sample_ids, outputdir=outputdir),
@@ -21,13 +29,19 @@ rule snippy:
         r1 = config['reads']+"/{sample}"+R1_suff,
         r2 = config['reads']+"/{sample}"+R2_suff
     output:
-        snps = directory("{outputdir}/snps_out/{sample}_snps")
+        vcf = "{outputdir}/snps_out/{sample}_snps/snps.raw.vcf",
+        bam = "{outputdir}/snps_out/{sample}_snps/snps.bam",
+        snippyoutdir = directory("{outputdir}/snps_out/{sample}_snps")
     priority:
         10
     log:
         "{outputdir}/{sample}_snippy.log"
     shell:
-        "snippy --outdir {output.snps} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
+        """
+        rm -Rf {output.snippyoutdir}
+        snippy --outdir {output.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1
+        """
+
 
 #-------------------------------------------------------------------#
 

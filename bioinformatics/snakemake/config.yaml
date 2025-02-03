@@ -1,9 +1,9 @@
 ##Configuration file for snippy_snakemake
 #Path to read directory
 #
-reads: /Users/joseph.lewis/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/Reads
+reads: data
 #File extension that comes after sample names
 R1_suffix: _R1_trimmed.fastq.gz
 R2_suffix: _R2_trimmed.fastq.gz
 #Path to output
-output:  /Users/joseph.lewis/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/Pipe_test
+output:  Pipe_test
