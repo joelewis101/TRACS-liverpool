@@ -44,6 +44,8 @@ rule snippy:
 
 
 #-------------------------------------------------------------------#
+# the sed command here uses macOS options - if it goes onto a linux cluster may
+# need edit (remove the " " )
 
 rule split_complex_var:
     input:
@@ -69,10 +71,12 @@ rule depth_calc:
     priority:
        9
     shell:
-       "samtools depth -aa -q 13 -Q 60 -d 0 {input.bam} > {output.depth}"
+       """
+       samtools depth -aa -q 13 -Q 60 -d 0 {input.bam} > {output.depth}
+       sed  "s/^/{wildcards.sample}\t/" {output.depth} > {output.depth}.tmp &&  mv {output.depth}.tmp {output.depth}
+       """
 
-#-------------------------------------------------------------------#
-
+#-------------------------------------------------------------------#s
 rule pull_out_var_calc_VAF:
     input:
        filt = "{outputdir}/vaf_files/{sample}.myfilt.vcf"
@@ -84,6 +88,7 @@ rule pull_out_var_calc_VAF:
         """
         bcftools +fill-tags {input.filt} -- -t 'FORMAT/VAF:1=float(FORMAT/AO / (FORMAT/AO + FORMAT/RO))' | 
         bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%VAF]\t[%AO]\t[%RO]\t[%DP]' > {output.vaf}
+        sed  "s/^/{wildcards.sample}\t/" {output.vaf} > {output.vaf}.tmp &&  mv {output.vaf}.tmp {output.vaf}
         """
 
 #-------------------------------------------------------------------# 
@@ -103,5 +108,6 @@ rule high_qual_hetsnps:
        vt normalize -r {input.reference} - | 
        vt decompose -s - | 
        bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%AO]\t[%RO]\t[%DP]' > {output.all_snps}
+       sed  "s/^/{wildcards.sample}\t/" {output.all_snps} > {output.all_snps}.tmp &&  mv {output.all_snps}.tmp {output.all_snps}
        """
 #-------------------------------------------------------------------#
