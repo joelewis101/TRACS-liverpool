@@ -44,8 +44,6 @@ rule snippy:
 
 
 #-------------------------------------------------------------------#
-# the sed command here uses macOS options - if it goes onto a linux cluster may
-# need edit (remove the " " )
 
 rule split_complex_var:
     input:
