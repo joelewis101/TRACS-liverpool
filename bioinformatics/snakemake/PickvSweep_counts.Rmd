@@ -1,0 +1,195 @@
+---
+title: "PickvSweep"
+author: "Sarah Gallichan"
+date: "2025-02-13"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(summariser)
+```
+
+#Functions
+##Decompose
+```{r}
+decompose_variants <- function(df) {
+  df_nonsnps <-
+    df |> filter(nchar(ref) > 1 | nchar(alt) > 1)
+  df_out <-
+    bind_rows(
+      df_nonsnps |>
+        ungroup() |>
+        split(1:nrow(df_nonsnps)) |>
+        map(split_variants) |>
+        bind_rows() |>
+        as.data.frame(),
+      df |>
+        filter(nchar(ref) == 1 & nchar(alt) == 1)
+    )
+  return(df_out)
+}
+```
+##Split
+```{r}
+split_variants <- function(row) {
+  if (nrow(row) != 1) {
+    stop("Tried to hand split_variants more than one row")
+  }
+  initpos <- row$pos
+  row <-
+    row |>
+    mutate(
+      alt = str_pad(
+        alt, max(c(nchar(ref), nchar(alt))),
+        side = "right", pad = "-"
+      ),
+      ref = str_pad(
+        ref, max(c(nchar(ref), nchar(alt))),
+        side = "right", pad = "-"
+      )
+    )
+  row <-
+    bind_cols(
+      row |>
+        mutate(alt = gsub("([ACTG-])(?=[ACTG-])", "\\1,", alt, perl = TRUE)) |>
+        select(-c(pos, ref)) |>
+        separate_longer_delim(alt, ","),
+      row |>
+        mutate(ref = gsub("([ACTG-])(?=[ACTG-])", "\\1,", ref, perl = TRUE)) |>
+        select(ref) |>
+        separate_longer_delim(ref, ",")
+    )
+  row <-
+    bind_cols(
+      row,
+      pos = c(initpos:(initpos + nrow(row) - 1))
+    )
+  return(row)
+}
+```
+
+#Import files
+```{r}
+Sweep_VAF <- read_tsv(snakemake@input[["myVAF"]],
+                     col_names = c("gene", "pos", "ref", "alt", "type", "VAF", "AO", "RO", "DP")
+) |>
+  decompose_variants() |>
+  filter(ref != alt)
+
+Sweep_ALLsnps <- read_tsv(snakemake@input[["allSNPs"]],
+                     col_names = c("gene", "pos", "ref", "alt", "type", "VAF", "AO", "RO", "DP")
+) |>
+  decompose_variants() |>
+  filter(ref != alt)
+
+Pick_VAF <- read_tsv(snakemake@input[["myVAF"]],
+                    col_names = c("gene", "pos", "ref", "alt", "type", "VAF", "AO", "RO", "DP")
+) |>
+  decompose_variants() |>
+  filter(ref != alt)
+
+Sweep_depth <- read_tsv(snakemake@input[["mydepth"]], 
+               col_names = c("gene", "pos", "depth"))
+
+Sweep_hetsnps <- read_tsv(snakemake@input[["hetsnps"]], 
+                              col_names = c("gene", "pos", "ref"))
+```
+
+#Join pick files together
+```{r}
+PS20_ST131_picks <- 
+  bind_rows(list(PS20_1_pick,
+                 PS20_2_pick,
+                 PS20_3_pick,
+                 PS20_4_pick,
+                 PS20_5_pick,
+                 PS20_6_pick))
+
+PS20_ST131_pick_depths <- 
+  bind_rows(list(PS20_1_depth,
+                 PS20_2_depth,
+                 PS20_3_depth,
+                 PS20_4_depth,
+                 PS20_5_depth,
+                 PS20_6_depth))
+
+PS20_ST131_pick_hetsnps <- 
+  bind_rows(list(PS20_1_hetsnps,
+                 PS20_2_hetsnps,
+                 PS20_3_hetsnps,
+                 PS20_4_hetsnps,
+                 PS20_5_hetsnps,
+                 PS20_6_hetsnps))
+```
+
+#Comparing picks and sweep
+```{r}
+positions_to_drop_PS20_ST131 <-
+  bind_rows(
+    Sweep_depth |>
+      filter(depth < 20) |>
+      select(-depth),
+     Pick_depths |>
+      filter(depth < 20) |>
+      select(-depth) |>
+      unique()
+  ) |>
+  bind_rows(
+    Sweep_VAF |>
+      filter((ref %in% c("A", "C", "T", "G")) & alt == "-") |>
+      select(gene, pos)
+  ) |>
+  bind_rows(
+    Picks_allSNPs |>
+      filter((ref %in% c("A", "C", "T", "G")) & alt == "-") |>
+      select(gene, pos)
+  ) |>
+  bind_rows(
+    PS20_ST131_pick_hetsnps |>
+      rowwise() |>
+      mutate(
+        pos = paste(c(pos:(pos + nchar(ref) - 1)), collapse = ",")
+      ) |>
+      select(gene, pos) |>
+      separate_longer_delim(pos, ",") |>
+      mutate(pos = as.numeric(pos))
+  ) |>
+  unique()
+
+PS20_ST131_sweep_vars <-
+  PS20_ST131_ALLsnps |>
+  anti_join(
+    positions_to_drop_PS20_ST131,
+    by = join_by(gene == gene, pos == pos)
+  )
+
+PS20_ST131_pick_vars <-
+  PS20_ST131_picks |>
+  anti_join(
+    positions_to_drop_PS20_ST131,
+    by = join_by(gene == gene, pos == pos)
+  )
+
+PS20_ST131_joined <-
+  PS20_ST131_pick_vars |>
+  filter(ref != alt, ref != "-", alt != "-") |>
+  select(gene, pos, alt, ref) |>
+  unique() |>
+  full_join(
+    PS20_ST131_sweep_vars |>
+      filter(ref != alt, ref != "-", alt != "-"),
+    by = join_by(gene == gene, pos == pos, ref == ref),
+    suffix = c("_pick", "_sweep")
+  ) |>
+  mutate(
+    snp = case_when(
+      is.na(alt_pick) ~ "SNP in sweep only",
+      is.na(alt_sweep) ~ "SNP in pick only",
+      alt_pick == alt_sweep ~ "same SNP in pick and sweep",
+      alt_pick != alt_sweep ~ "different SNP in pick and sweep"))
+
+PS20_ST131_joined  |>
+  count(snp)
+```
