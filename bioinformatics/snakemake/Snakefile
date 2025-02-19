@@ -55,7 +55,7 @@ rule split_complex_var:
        9
     shell:
         """
-        bcftools view --include 'FMT/GT="1/1" & QUAL>=100 & FMT/DP>=10' {input.raw} |
+        bcftools view --include 'QUAL>=100 & FMT/DP>=10' {input.raw} |
         vt decompose_blocksub - |
         vt normalize -r {input.reference} - > {output.filt}
         """
