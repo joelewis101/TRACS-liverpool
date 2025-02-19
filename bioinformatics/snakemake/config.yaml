@@ -6,4 +6,4 @@ reads: data
 R1_suffix: _R1_trimmed.fastq.gz
 R2_suffix: _R2_trimmed.fastq.gz
 #Path to output
-output:  Pipe_test
+output:  test

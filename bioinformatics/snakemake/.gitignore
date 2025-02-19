@@ -1,4 +1,5 @@
 pipe_test/
+test/
 .snakemake/
 *fastq*
 *.fai
