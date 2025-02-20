@@ -5,6 +5,12 @@ R1_suff = config['R1_suffix']
 R2_suff = config['R2_suffix']
 outputdir = config['output']
 sample_type, sample_ids = glob_wildcards(config['reads'] + "/{sample_type}/{sample}"+R1_suff)
+
+picks = [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
+ for a,b in zip(sample_type, sample_ids) if a == "picks"]
+
+sweeps = [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
+ for a,b in zip(sample_type, sample_ids) if a == "sweeps"]
 sample_read_paths = []
 out_dirs = []
 for a,b in zip(sample_type, sample_ids):
@@ -18,20 +24,22 @@ print("Read suffixes: " + R1_suff + ", " + R2_suff)
 print("Found sample types: ", sample_type)
 print("Found sample IDs", sample_read_paths)
 print("Output directories: ", out_dirs)
+print(picks)
+print(sweeps)
 # print("Found sample IDs: ", sample_ids)
 
 rule all:
    input:
-      [r + "/snps" for r in out_dirs],
-      [r + "/snps/snps.bam" for r in out_dirs],
-      [r + "/output_files/samtools_depth.tsv" for r in out_dirs],
-      [r + "/output_files/low_QUAL_variants.tsv" for r in out_dirs],
-      [r + "/output_files/high_QUAL_variants.tsv" for r in out_dirs],
-      [r + "/output_files/het_variants.tsv" for r in out_dirs],
-      [r + "/output_files/sites_to_mask.tsv" for r in out_dirs],
-      config['output'] + "/concat_mask.tsv",
-      config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
-      config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
+      # [r + "/snps/snps.raw.vcf" for r in out_dirs],
+      # [r + "/snps/snps.bam" for r in out_dirs],
+      # [r + "/output_files/samtools_depth.tsv" for r in out_dirs],
+      # [r + "/output_files/low_QUAL_variants.tsv" for r in out_dirs],
+      # [r + "/output_files/high_QUAL_variants.tsv" for r in out_dirs],
+      # [r + "/output_files/het_variants.tsv" for r in out_dirs],
+      # [r + "/output_files/sites_to_mask.tsv" for r in out_dirs],
+      # config['output'] + "/concat_mask.tsv",
+      # config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
+      # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
       config['output'] + "/pick_vs_sweep_variants.tsv"
 #     input:
 #       expand("{outputdir}/{sample_type}/{sample}_snps/snps.raw.vcf",
@@ -52,11 +60,13 @@ rule snippy:
         r1 = config['reads']+"/{type}"+"/{sample}"+R1_suff,
         r2 = config['reads']+"/{type}"+"/{sample}"+R2_suff
     output:
-        # vcf = "{outputdir}/{sample_type}/{sample}_snps/snps.raw.vcf",
-        # bam = "{outputdir}/{sample_type}/{sample}_snps/snps.bam",
-        snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps")
+        vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
+        bam = config['output'] + "/{type}/{sample}/snps/snps.bam",
+        # snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
+    params:
+        snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
         # vcf = [r + "/snps/snps.raw.vcf" for r in out_dirs],
-        # bam = [r + "/snps/snps.bam" for r in out_dirs],
+        # bam = [r + "/snps/snps.bam" for r in out_dirs]
         # snippyoutdir = directory([r + "/snps" for r in out_dirs])
     priority:
         10
@@ -64,7 +74,7 @@ rule snippy:
         config['output'] + "/{type}_{sample}_snippy.log"
         # [r + "/snippy.log" for r in out_dirs],
     shell:
-        "snippy --force --outdir {output.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
+        "snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
 # -----------------------------------------------------------------#
 
@@ -72,7 +82,7 @@ rule samtools_depth_calc:
     input:
        bam = config['output'] + "/{type}/{sample}/snps/snps.bam"
     output:
-       depth = config['output'] + "{type}/{sample}/output_files/samtools_depth.tsv"
+       depth = config['output'] + "/{type}/{sample}/output_files/samtools_depth.tsv"
     priority:
        9
     shell:
@@ -86,7 +96,7 @@ rule het_var:
      vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
      reference = "Reference.fasta"
   output:
-     het_var = config['output'] + "{type}/{sample}/output_files/het_variants.tsv"
+     het_var = config['output'] + "/{type}/{sample}/output_files/het_variants.tsv"
   priority:
      9
   shell:
@@ -105,7 +115,7 @@ rule low_QUAL_var:
      reference = "Reference.fasta"
   output:
      low_qual_var = config['output'] +
-     "{type}/{sample}/output_files/low_QUAL_variants.tsv"
+     "/{type}/{sample}/output_files/low_QUAL_variants.tsv"
   priority:
      9
   shell:
@@ -124,7 +134,7 @@ rule high_QUAL_var:
      reference = "Reference.fasta"
   output:
      high_qual_var = config['output'] +
-     "{type}/{sample}/output_files/high_QUAL_variants.tsv"
+     "/{type}/{sample}/output_files/high_QUAL_variants.tsv"
   priority:
      9
   shell:
@@ -141,8 +151,8 @@ rule generate_pick_masks:
   input:
      samtools_depth = config['output'] + "/{type}/{sample}/output_files/samtools_depth.tsv",
      low_qual_var = config['output'] +
-     "{type}/{sample}/output_files/low_QUAL_variants.tsv",
-     het_var = config['output'] + "{type}/{sample}/output_files/het_variants.tsv"
+     "/{type}/{sample}/output_files/low_QUAL_variants.tsv",
+     het_var = config['output'] + "/{type}/{sample}/output_files/het_variants.tsv"
   output:
      msk = config['output'] + "/{type}/{sample}/output_files/sites_to_mask.tsv",
   priority:
@@ -169,7 +179,7 @@ rule concat_masks:
 rule concat_pick_vars:
    input:
       [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
-       for a,b in zip(sample_type, sample_ids) if sample_type == "picks"]
+       for a,b in zip(sample_type, sample_ids) if a == "picks"]
    output:
       config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv"
    params:
@@ -184,7 +194,7 @@ rule concat_pick_vars:
 rule concat_sweep_vars:
    input:
       [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
-       for a,b in zip(sample_type, sample_ids) if sample_type == "sweeps"]
+       for a,b in zip(sample_type, sample_ids) if a == "sweeps"]
    output:
       config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv"
    params:
