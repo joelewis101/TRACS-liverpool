@@ -1,50 +1,27 @@
 # Running snakemake pipeline
 
+Currently the pipeline takes a folder full of pick reads, a folder full of sweep
+reads, assembles them to a reference with snippy. Then uses the bam files to
+generate masks for low quality (QUAL) variants, low depth (accounting for poor
+quality bases  and mappings) and heterogeneous SNPS (!= "1/1") in bases. It
+produces an output tsv with a list of high quality variants that are present is
+either picks, sweeps, or both.
 
 ## Put data in the right places
 
 * Read files in `data/`
-* the script `data/download_test_files.sh` will use `wget` to download some
-DASSIM E. coli reads and a K12 reference for testing if you like
+* sweeps in `data/sweeps`, picks in `data/picks`
 
 ## Run 
 
-`cd snakemake`  
-`snakemake -s Snakemake_snippy.smk`  
-
-It uses the `configJL.yaml` file and the data in the `data/` folder - put reads
-in here
-
-The `Snakefile` is sarah's full pipeline - fully working on 31/01/2025.
-
-## Overview of pipeline - current pipeline
-
-```mermaid
-flowchart TB
-A["{sample}{R1_suffix}.fastq
-{sample}{R2_suffix}.fastq"] -->|snippy| B["{outputdir}/snps_out/{sample}-snps/"]
-B --> C[snps.bam
-*read mapping from bwa mem*]
-B --> D[snps.raw.vcf
-*variant calls from FreeBayes*]
-D -->|split_complex_var| E[myfilt.vcf
-*variants filtered on hetsnps, QUAL, depth as per snippy with bcftools and variants decomposed with vt*]
-C -->|depth_calc| F[mydepth.tsv
-*depth by site excluding low quality base and mapping quality*]
-E -->|pull_out_var_calc| G[myVAF.tsv 
-*VAF calculated using bcftools*]
-D -->|high_qual_hetsnps| H[allSNPs.tsv
-*all SNPs, filtered only for variant quaity ie QUAL decomposed and normalised with vt*]
-```
+`snakemake`  
 
 Reminder
 
 * QUAL - measure of variant quality used by bcftools
 * samtools -q is base quality, -Q is mapping quality
 
-## Proposed pipeline
-
-
+## Pipeline overview
 ```mermaid
 flowchart TB
 a["Sweeps/ 

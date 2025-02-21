@@ -42,38 +42,21 @@ rule all:
       # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
       #config['output'] + "/pick_vs_sweep_variants.tsv"
       config['output'] + "/variant_count.tsv"
-#     input:
-#       expand("{outputdir}/{sample_type}/{sample}_snps/snps.raw.vcf",
-#              sample=sample_ids, sample_type = sample_type, outputdir=outputdir),
-#       expand("{outputdir}/{sample_type}/{sample}_snps/snps.bam",
-#              sample=sample_ids, sample_type = sample_type, outputdir=outputdir),
-      # expand("{outputdir}/snps_out/{sample}_snps", sample=sample_ids, outputdir=outputdir),
-      # expand("{outputdir}/vaf_files/{sample}.myfilt.vcf", sample=sample_ids, outputdir=outputdir),
-      # expand("{outputdir}/vaf_files/{sample}.mydepth.tsv", sample=sample_ids, outputdir=outputdir),
-      # expand("{outputdir}/vaf_files/{sample}.myVAF.tsv", sample=sample_ids, outputdir=outputdir),
-      # expand("{outputdir}/vaf_files/{sample}.allSNPS.tsv", sample=sample_ids, outputdir=outputdir)
 
 rule snippy:
     input:
         reference = "Reference.fasta",
-        # r1 = [p + R1_suff for p in sample_read_paths],
-        # r2 = [p + R2_suff for p in sample_read_paths]
         r1 = config['reads']+"/{type}"+"/{sample}"+R1_suff,
         r2 = config['reads']+"/{type}"+"/{sample}"+R2_suff
     output:
         vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
         bam = config['output'] + "/{type}/{sample}/snps/snps.bam",
-        # snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
     params:
         snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
-        # vcf = [r + "/snps/snps.raw.vcf" for r in out_dirs],
-        # bam = [r + "/snps/snps.bam" for r in out_dirs]
-        # snippyoutdir = directory([r + "/snps" for r in out_dirs])
     priority:
         10
     log:
         config['output'] + "/{type}_{sample}_snippy.log"
-        # [r + "/snippy.log" for r in out_dirs],
     shell:
         "snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
