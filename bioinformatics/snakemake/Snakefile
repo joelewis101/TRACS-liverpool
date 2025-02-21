@@ -162,6 +162,7 @@ rule generate_pick_masks:
       scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
       """
 
+# -------------------------------------------------------------------#
 rule concat_masks:
    input:
       [r + "/output_files/sites_to_mask.tsv" for r in out_dirs]
@@ -176,6 +177,7 @@ rule concat_masks:
       find {params.outdir} -name "sites_to_mask.tsv" | xargs cat | cut -f2- | uniq > {output}
       """
 
+# -------------------------------------------------------------------#
 rule concat_pick_vars:
    input:
       [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
@@ -191,6 +193,7 @@ rule concat_pick_vars:
       scripts/concatenate_decompose_variants.R -d {params.outdir}/picks -f high_QUAL_variants.tsv -o {output}
       """
 
+# -------------------------------------------------------------------#
 rule concat_sweep_vars:
    input:
       [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
@@ -206,6 +209,7 @@ rule concat_sweep_vars:
       scripts/concatenate_decompose_variants.R -d {params.outdir}/sweeps -f high_QUAL_variants.tsv -o {output}
       """
 
+# -------------------------------------------------------------------#
 rule combine_and_mask_pick_and_sweep_vars:
    input: 
       sweep_vars = config['output'] +
@@ -221,3 +225,17 @@ rule combine_and_mask_pick_and_sweep_vars:
       """
       scripts/combine_and_mask_variants.R -p {input.pick_vars} -s {input.sweep_vars} -m {input.mask} -o {output}
       """
+# -------------------------------------------------------------------#
+rule count_variants:
+   input:
+      config['output'] + "/pick_vs_sweep_variants.tsv"
+   output:
+      config['output'] + "/variant_count.tsv"
+   priority:
+      4
+   shell:
+      """
+      scripts/count_variants.R -i {input} -o {output}
+      """
+# -------------------------------------------------------------------#
+
