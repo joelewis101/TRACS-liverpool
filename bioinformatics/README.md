@@ -13,11 +13,11 @@ README in the snakmake directory details how to run the pipeline.
 * snakemake
 * snippy
 * R 
- + dplyr
- + readr
- + stringr
- + tidyr
- + purrr
+  + dplyr
+  + readr
+  + stringr
+  + tidyr
+  + purrr
 
 ## Setting up the environment
 
