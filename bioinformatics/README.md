@@ -1,13 +1,23 @@
 # Aims of this repo
 
-Lots of code going back and forth to get the TRACS snakemake repo up and
-running; this can serve as a place to develop the pipeline.
+A home for the bioinformatics scripts for TRACS, using snakemake.
 
 ## Structure
 
 Snakefiles are in `snakemake/` directory. Data to test the pipeline should go in
 the `snakemake/data` folder - data files aren't pushed to github as very big. A
 README in the snakmake directory details how to run the pipeline.
+
+## dependencies
+
+* snakemake
+* snippy
+* R 
+ + dplyr
+ + readr
+ + stringr
+ + tidyr
+ + purrr
 
 ## Setting up the environment
 
@@ -36,6 +46,10 @@ Install snippy **before** snakemake or I get an error (see below)
 ### Install snakemake
 
 `conda install snakemake-minimal`
+
+### R installation
+
+Needs a R installation with the above packages
 
 ### Clone repo
 
