@@ -239,4 +239,3 @@ rule count_variants:
       scripts/count_variants.R -i {input} -o {output}
       """
 # -------------------------------------------------------------------#
-
