@@ -40,7 +40,8 @@ rule all:
       # config['output'] + "/concat_mask.tsv",
       # config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
       # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
-      config['output'] + "/pick_vs_sweep_variants.tsv"
+      #config['output'] + "/pick_vs_sweep_variants.tsv"
+      config['output'] + "/variant_count.tsv"
 #     input:
 #       expand("{outputdir}/{sample_type}/{sample}_snps/snps.raw.vcf",
 #              sample=sample_ids, sample_type = sample_type, outputdir=outputdir),
