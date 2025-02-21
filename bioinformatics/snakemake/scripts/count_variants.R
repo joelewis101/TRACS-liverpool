@@ -6,9 +6,10 @@ library(readr)
 library(tidyr)
 
 parser <- ArgumentParser(description= 'Count variant differences between picks and sweep')
-
 parser$add_argument('--pick_vs_sweep_variants', '-i', help= 'pick vs sweep variant file')
 parser$add_argument('--output', '-o', help= 'output file')
+
+xargs<- parser$parse_args()
 
 pick_vs_sweep_variants <-
   read_tsv(xargs$pick_vs_sweep_variants)
