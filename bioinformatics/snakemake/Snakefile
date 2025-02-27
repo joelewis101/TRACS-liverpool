@@ -4,18 +4,18 @@ configfile:
 R1_suff = config['R1_suffix']
 R2_suff = config['R2_suffix']
 outputdir = config['output']
-sample_type, sample_ids = glob_wildcards(config['reads'] + "/{sample_type}/{sample}"+R1_suff)
+sample_type, sample_ids, seq_type = glob_wildcards(config['reads'] + "/{sample_type}/{sample}_{seq_type}"+R1_suff)
 
-picks = [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
- for a,b in zip(sample_type, sample_ids) if a == "picks"]
+picks = [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants.tsv"
+ for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "picks"]
 
-sweeps = [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
- for a,b in zip(sample_type, sample_ids) if a == "sweeps"]
+sweeps = [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants.tsv"
+ for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "sweeps"]
 sample_read_paths = []
 out_dirs = []
-for a,b in zip(sample_type, sample_ids):
-  sample_read_paths.append(config['reads'] + "/" + a + "/" + b)
-  out_dirs.append(config['output'] + "/" + a + "/" + b)
+for a,b,c in zip(sample_type, sample_ids, seq_type):
+  sample_read_paths.append(config['reads'] + "/" + a + "/" + b + "_" + c)
+  out_dirs.append(config['output'] + "/" + a + "/" + b + "_" + c)
 
 
 print("TRACS msweep pick vs sweep pipeline v0.1")
@@ -23,6 +23,7 @@ print("Read directory: "  + config['reads'])
 print("Read suffixes: " + R1_suff + ", " + R2_suff)
 print("Found sample types: ", sample_type)
 print("Found sample IDs", sample_read_paths)
+print("Found sequence types: ", seq_type)
 print("Output directories: ", out_dirs)
 print(picks)
 print(sweeps)
@@ -46,17 +47,24 @@ rule all:
 rule snippy:
     input:
         reference = "Reference.fasta",
-        r1 = config['reads']+"/{type}"+"/{sample}"+R1_suff,
-        r2 = config['reads']+"/{type}"+"/{sample}"+R2_suff
+        # r1 = [p + R1_suff for p in sample_read_paths],
+        # r2 = [p + R2_suff for p in sample_read_paths]
+        r1 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R1_suff,
+        r2 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R2_suff
     output:
-        vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
-        bam = config['output'] + "/{type}/{sample}/snps/snps.bam",
+        vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
+        bam = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.bam",
+        # snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
     params:
-        snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
+        snippyoutdir = directory(config['output'] + "/{type}/{sample}_{seq_type}/snps"),
+        # vcf = [r + "/snps/snps.raw.vcf" for r in out_dirs],
+        # bam = [r + "/snps/snps.bam" for r in out_dirs]
+        # snippyoutdir = directory([r + "/snps" for r in out_dirs])
     priority:
         10
     log:
-        config['output'] + "/{type}_{sample}_snippy.log"
+        config['output'] + "/{type}_{sample}_{seq_type}_snippy.log"
+        # [r + "/snippy.log" for r in out_dirs],
     shell:
         "snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
@@ -64,23 +72,23 @@ rule snippy:
 
 rule samtools_depth_calc:
     input:
-       bam = config['output'] + "/{type}/{sample}/snps/snps.bam"
+       bam = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.bam"
     output:
-       depth = config['output'] + "/{type}/{sample}/output_files/samtools_depth.tsv"
+       depth = config['output'] + "/{type}/{sample}_{seq_type}/output_files/samtools_depth.tsv"
     priority:
        9
     shell:
        """
        samtools depth -aa -q 13 -Q 60 -d 0 {input.bam} > {output.depth}
-       sed  "s/^/{wildcards.sample}\t/" {output.depth} > {output.depth}.tmp &&  mv {output.depth}.tmp {output.depth}
+       sed  "s/^/{wildcards.sample}\t{wildcards.seq_type}\t/" {output.depth} > {output.depth}.tmp &&  mv {output.depth}.tmp {output.depth}
        """
 #-------------------------------------------------------------------#
 rule het_var:
   input:
-     vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
+     vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
      reference = "Reference.fasta"
   output:
-     het_var = config['output'] + "/{type}/{sample}/output_files/het_variants.tsv"
+     het_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/het_variants.tsv"
   priority:
      9
   shell:
@@ -90,16 +98,16 @@ rule het_var:
       vt decompose_blocksub - |
       vt normalize -r {input.reference} - |
       bcftools query -o {output.het_var} -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%GT]\t%QUAL\t[%AO]\t[%RO]\t[%DP]' -
-      sed "s/^/{wildcards.sample}\t/" {output.het_var} > {output.het_var}.tmp &&  mv {output.het_var}.tmp {output.het_var}
+      sed "s/^/{wildcards.sample}\t{wildcards.seq_type}\t/" {output.het_var} > {output.het_var}.tmp &&  mv {output.het_var}.tmp {output.het_var}
       """
 #-------------------------------------------------------------------#
 rule low_QUAL_var:
   input:
-     vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
+     vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
      reference = "Reference.fasta"
   output:
      low_qual_var = config['output'] +
-     "/{type}/{sample}/output_files/low_QUAL_variants.tsv"
+     "/{type}/{sample}_{seq_type}/output_files/low_QUAL_variants.tsv"
   priority:
      9
   shell:
@@ -109,16 +117,16 @@ rule low_QUAL_var:
       vt decompose_blocksub - |
       vt normalize -r {input.reference} - |
       bcftools query -o {output.low_qual_var} -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%GT]\t%QUAL\t[%AO]\t[%RO]\t[%DP]' -
-      sed  "s/^/{wildcards.sample}\t/" {output.low_qual_var} > {output.low_qual_var}.tmp &&  mv {output.low_qual_var}.tmp {output.low_qual_var}
+      sed  "s/^/{wildcards.sample}\t{wildcards.seq_type}\t/" {output.low_qual_var} > {output.low_qual_var}.tmp &&  mv {output.low_qual_var}.tmp {output.low_qual_var}
       """
 #-------------------------------------------------------------------#
 rule high_QUAL_var:
   input:
-     vcf = config['output'] + "/{type}/{sample}/snps/snps.raw.vcf",
+     vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
      reference = "Reference.fasta"
   output:
      high_qual_var = config['output'] +
-     "/{type}/{sample}/output_files/high_QUAL_variants.tsv"
+     "/{type}/{sample}_{seq_type}/output_files/high_QUAL_variants.tsv"
   priority:
      9
   shell:
@@ -128,22 +136,22 @@ rule high_QUAL_var:
       vt decompose_blocksub - |
       vt normalize -r {input.reference} - |
       bcftools query -o {output.high_qual_var} -f '%CHROM\t%POS\t%REF\t%ALT\t%TYPE\t[%GT]\t%QUAL\t[%AO]\t[%RO]\t[%DP]' -
-      sed "s/^/{wildcards.sample}\t/" {output.high_qual_var} > {output.high_qual_var}.tmp &&  mv {output.high_qual_var}.tmp {output.high_qual_var}
+      sed "s/^/{wildcards.sample}\t{wildcards.seq_type}\t/" {output.high_qual_var} > {output.high_qual_var}.tmp &&  mv {output.high_qual_var}.tmp {output.high_qual_var}
       """
 # -------------------------------------------------------------------#
 rule generate_pick_masks:
   input:
-     samtools_depth = config['output'] + "/{type}/{sample}/output_files/samtools_depth.tsv",
+     samtools_depth = config['output'] + "/{type}/{sample}_{seq_type}/output_files/samtools_depth.tsv",
      low_qual_var = config['output'] +
-     "/{type}/{sample}/output_files/low_QUAL_variants.tsv",
-     het_var = config['output'] + "/{type}/{sample}/output_files/het_variants.tsv"
+     "/{type}/{sample}_{seq_type}/output_files/low_QUAL_variants.tsv",
+     het_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/het_variants.tsv"
   output:
-     msk = config['output'] + "/{type}/{sample}/output_files/sites_to_mask.tsv",
+     msk = config['output'] + "/{type}/{sample}_{seq_type}/output_files/sites_to_mask.tsv",
   priority:
    8
   shell:
       """ 
-      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
+      scripts/generate_pick_mask.R -t {wildcards.type}_{wildcards.seq_type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
       """
 
 # -------------------------------------------------------------------#
@@ -164,8 +172,8 @@ rule concat_masks:
 # -------------------------------------------------------------------#
 rule concat_pick_vars:
    input:
-      [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
-       for a,b in zip(sample_type, sample_ids) if a == "picks"]
+      [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants.tsv"
+       for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "picks"]
    output:
       config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv"
    params:
@@ -180,8 +188,8 @@ rule concat_pick_vars:
 # -------------------------------------------------------------------#
 rule concat_sweep_vars:
    input:
-      [outputdir + "/" + a + "/" + b + "/output_files/high_QUAL_variants.tsv"
-       for a,b in zip(sample_type, sample_ids) if a == "sweeps"]
+      [outputdir + "/" + a + "/" + b+ "_" + c + "/output_files/high_QUAL_variants.tsv"
+       for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "sweeps"]
    output:
       config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv"
    params:
