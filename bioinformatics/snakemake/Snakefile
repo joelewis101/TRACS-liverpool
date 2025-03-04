@@ -151,7 +151,7 @@ rule generate_pick_masks:
    8
   shell:
       """ 
-      scripts/generate_pick_mask.R -t {wildcards.type}_{wildcards.seq_type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
+      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
       """
 
 # -------------------------------------------------------------------#
@@ -188,7 +188,7 @@ rule concat_pick_vars:
 # -------------------------------------------------------------------#
 rule concat_sweep_vars:
    input:
-      [outputdir + "/" + a + "/" + b+ "_" + c + "/output_files/high_QUAL_variants.tsv"
+      [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants.tsv"
        for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "sweeps"]
    output:
       config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv"

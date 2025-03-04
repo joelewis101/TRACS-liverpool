@@ -74,14 +74,14 @@ split_variants <- function(row) {
 cat("loading data\n")
 
 het_sites <- read_tsv(xargs$het_sites_file, 
-    col_names = c("sample", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+                      col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
 )
 
 lowqual_sites <- read_tsv(xargs$lowQUAL_sites_file, 
-    col_names = c("sample", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+                          col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
 )
 depth <-  read_tsv(xargs$depth_file, 
-    col_names = c("sample", "gene", "pos", "depth")
+                   col_names = c("sample", "sequence_type", "gene", "pos", "depth")
 )
 
 cat("generating mask file\n")
@@ -98,12 +98,12 @@ if (xargs$type == "picks") {
       # ignore deletions
       het_sites |>
         filter(ref != "-") |>
-        select(sample, gene, pos),
+        select(sample, sequence_type, gene, pos),
       lowqual_sites |>
         filter(ref != "-") |>
-        select(sample, gene, pos)
+        select(sample, sequence_type, gene, pos)
     ) |>
-    arrange(sample, gene, pos) |>
+    arrange(sample, sequence_type, gene, pos) |>
     unique()
 } else if (xargs$type == "sweeps") {
   cat("including low qual variants in mask\n")
@@ -115,13 +115,13 @@ if (xargs$type == "picks") {
       # ignore deletions
       lowqual_sites |>
         filter(ref != "-") |>
-        select(sample, gene, pos)
+        select(sample, sequence_type, gene, pos)
     ) |>
-    arrange(sample, gene, pos) |>
+    arrange(sample, sequence_type, gene, pos) |>
     unique()
 } else {
   stop("sample type must be one of pick or sweep")
 }
 cat(paste0("writing to ", xargs$output, "\n"))
 write_tsv(sites_to_mask, xargs$output)
-
+#

@@ -28,23 +28,23 @@ mask <-
 
 
 df_out <-
-full_join(
-pick_vars |>
-  # ignore insertions, deletions
-  filter(ref != alt, ref != "-", alt != "-") |>
-  anti_join(
-    mask,
-    by = join_by(gene == gene, pos == pos)
-    ),
-sweep_vars |>
-  filter(ref != alt, ref != "-", alt != "-") |>
-  anti_join(
-    mask,
-    by = join_by(gene == gene, pos == pos)
-    ),
-  by = join_by(gene == gene, pos == pos, ref == ref),
-suffix = c("_pick", "_sweep")
-)
+  full_join(
+    pick_vars |>
+      # ignore insertions, deletions
+      filter(ref != alt, ref != "-", alt != "-") |>
+      anti_join(
+        mask,
+        by = join_by(gene == gene, pos == pos)
+      ),
+    sweep_vars |>
+      filter(ref != alt, ref != "-", alt != "-") |>
+      anti_join(
+        mask,
+        by = join_by(gene == gene, pos == pos)
+      ),
+    by = join_by(gene == gene, pos == pos, ref == ref),
+    suffix = c("_pick", "_sweep")
+  )
 
 
 

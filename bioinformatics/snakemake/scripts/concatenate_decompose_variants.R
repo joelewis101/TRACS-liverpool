@@ -77,15 +77,15 @@ cat("Found:\n")
 print(files)
 
 out_df <-
-map(paste0(xargs$directory,"/",files),
-  \(x) decompose_variants(
-    read_tsv(x,
-    col_names = c("sample", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
-  ))
-) |>
+  map(paste0(xargs$directory,"/",files),
+      \(x) decompose_variants(
+        read_tsv(x,
+                 col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+        ))
+  ) |>
   bind_rows() |>
-  select(sample, gene, pos, ref, alt) |>
-  group_by(gene,pos, ref, alt) |>
+  select(sample, sequence_type, gene, pos, ref, alt) |>
+  group_by(gene, pos, ref, alt) |>
   summarise(samples = paste(sample, collapse = ",")) 
 
 cat(paste0("writing to ", xargs$output, "\n"))

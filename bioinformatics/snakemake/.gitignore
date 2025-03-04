@@ -3,3 +3,4 @@ test/
 .snakemake/
 *fastq*
 *.fai
+PS161/
