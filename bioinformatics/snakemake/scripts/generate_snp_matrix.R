@@ -3,8 +3,7 @@
 library(argparse)
 
 parser <- ArgumentParser(description= 'Take the pick_vs_sweep_variants.tsv file and generate a pairwise snp matrix')
-
-parser$add_argument('--file', '-f', help= 'file name to input')
+parser$add_argument('--pick_vs_sweep_variants', '-i', help= 'pick vs sweep variant file')
 parser$add_argument('--output', '-o', help= 'output file')
 
 xargs<- parser$parse_args()
@@ -14,9 +13,9 @@ suppressMessages(library(readr))
 suppressMessages(library(tidyr))
 options(dplyr.summarise.inform = FALSE)
 
-cat(paste0("\nLoading ", xargs$file, "\n"))
+cat(paste0("\nLoading ", xargs$pick_vs_sweep_variants, "\n"))
 df <-
-  read_tsv(xargs$file, show_col_types = FALSE)
+  read_tsv(xargs$pick_vs_sweep_variants, show_col_types = FALSE)
 cat("\nGenerating pairwise SNP matrix\n")
 
 
@@ -60,14 +59,14 @@ df2 <-
   arrange(gene, pos)
 
 # make pairwise comparison
-df_out <-
+snp_matrix <-
   full_join(df2, df2,
-    by = join_by(
-      gene == gene,
-      pos == pos,
-      ref == ref
-    ),
-    relationship = "many-to-many"
+            by = join_by(
+              gene == gene,
+              pos == pos,
+              ref == ref
+            ),
+            relationship = "many-to-many"
   ) |>
   # filter(sample.x != sample.y) |>
   group_by(gene, pos, ref, sample.x, sample.y) |>
@@ -79,7 +78,7 @@ df_out <-
   summarise(n = sum(snp)) |>
   pivot_wider(id_cols = sample.x, names_from = sample.y, values_from = n)
 cat("\n")
-print(as.data.frame(df_out))
+print(as.data.frame(snp_matrix))
 
 cat(paste0("\nWriting to ", xargs$output, "\n"))
-write_tsv(df_out, xargs$output)
+write_tsv(snp_matrix, xargs$output)
