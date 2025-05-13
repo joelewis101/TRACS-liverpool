@@ -1,0 +1,6 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,NA,dbl,0,,
+2,redcap_event_name,NA,chr,0,,
+3,date,NA,date,0,,
+4,location,NA,chr,0,,
+5,bed,NA,chr,4,,

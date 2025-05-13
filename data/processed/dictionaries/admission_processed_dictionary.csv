@@ -1,0 +1,9 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,Unique participant ID,dbl,0,,
+2,redcap_event_name,NA,chr,0,,
+3,data_collection_date,Date of sample collection,date,0,,
+4,location,Name of Hospital/facility,chr,0,,
+5,admission_date,Date of admission to current facility,date,0,,
+6,admitted_from,Where admitted from to current facility,chr,1,,
+7,hospital_other_detail,Free text details of which hospital admitted from,chr,72,,
+8,prev_location_adm_date,NA,date,89,,

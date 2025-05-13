@@ -1,5 +1,6 @@
 *.pdf
 .DS_Store
 data/raw/*
-data/processed/*
+data/processed/redcap
+data/processed/micro
 data/secrets/*

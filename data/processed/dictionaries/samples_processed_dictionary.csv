@@ -1,0 +1,11 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,Unique participant ID,dbl,0,,
+2,event_name,NA,chr,0,,
+3,repeat_instrument,NA,chr,0,,
+4,repeat_instance,NA,dbl,0,,
+5,type_of_sample,NA,chr,0,,
+6,date_sample_collected,NA,date,0,,
+7,bed_space_room_number,NA,chr,2,,
+8,sample_number,NA,chr,0,,
+9,form_completed_by,NA,chr,0,,
+10,complete,NA,chr,0,,

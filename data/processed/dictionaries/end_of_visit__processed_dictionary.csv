@@ -1,0 +1,10 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,Unique participant ID,chr,0,,
+2,redcap_event_name,NA,chr,0,,
+3,end_of_visit_date,NA,date,0,,
+4,participant_present,NA,chr,0,,
+5,discharge_date,NA,date,151,,
+6,discharge_destination,NA,chr,151,,
+7,discharge_dest_specify,NA,chr,166,,
+8,completion,NA,chr,0,,
+9,end_of_visit_complete,NA,chr,0,,

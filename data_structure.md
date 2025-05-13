@@ -113,3 +113,12 @@ test results and an interpretation of whether e coli is present (`e_coli =
 ["Yes", "No"]`) or K. pneumo is present (`k_pneumo = ["Yes", "No]`)
 * `micro_env_sample_loc` - this links the TRACS sample ID (the TRACS_2 one) to
 study location with an ID that corresponds to the location on the maps.
+
+## Data dictionaries
+
+Data dictionaries are in `data/processed/dictionaries`. The script
+`R/generate_data_dictionary.R` will generate a summary dictionary for each table
+described above. The micro dictionaries include variable descriptions - the
+tables derived from redcap don't but the file `TRACSPart2_DataDictionary` file
+has the redcap data dictionary which is auto generated.
+

@@ -1,0 +1,13 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,Unique participant ID,dbl,0,,
+2,redcap_event_name,NA,chr,0,,
+3,redcap_repeat_instrument,NA,chr,0,,
+4,redcap_repeat_instance,NA,dbl,0,,
+5,abx_name,NA,chr,0,,
+6,abx_other,NA,chr,422,,
+7,abx_start_date,NA,date,2,,
+8,abx_end_date,NA,date,9,,
+9,abx_route,NA,chr,2,,
+10,abx_dose,NA,chr,2,,
+11,abx_frequency,NA,chr,2,,
+12,antibiotic_exposure_complete,NA,chr,0,,

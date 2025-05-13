@@ -1,0 +1,12 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,week,Week of study,dbl,0,,
+2,location,Name of Hospital/facility,chr,0,,
+3,site_number,Unique location ID for site location,dbl,2,,
+4,ward,Ward/location at sub-facility level,chr,1250,,
+5,room,Room of swab collection location,chr,0,,
+6,swab_site,Site of swab collection,chr,0,,
+7,swab_number,Unique TRACS id to link to redcap metadata - same as tracs_id,chr,0,,
+8,pbs_number,PBS (collection solution) batch number,chr,282,,
+9,date,Date of sample collection,date,104,,
+10,pbs_503_contaminated_original_swab_numbers,NA,dbl,4663,,
+11,floor,Floor within facility of sampel collection,chr,2798,,

@@ -1,0 +1,6 @@
+pos,variable,label,col_type,missing,levels,value_labels
+1,record_id,Unique participant ID,dbl,0,,
+2,redcap_event_name,NA,chr,0,,
+3,date_cfs,NA,date,0,,
+4,research_staff,NA,chr,0,,
+5,cfs,clinical frailty score,dbl,0,,

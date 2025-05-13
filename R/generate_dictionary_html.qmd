@@ -1,0 +1,33 @@
+---
+title: Data dictionaries
+date: today
+date-format: "D MMMM YYYY"
+format: 
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+This document summarises the data dictionaries for the TRACS data
+
+```{r, results = "asis"}
+
+library(tidyverse)
+library(kableExtra)
+library(here)
+
+filenames <- list.files(here("data/processed/dictionaries"))
+
+for (f in filenames) {
+  print(f)
+  print(
+  kable(read_csv(here("data/processed/dictionaries/", f))) |>
+    kable_styling()
+)
+  cat("\n\n")
+}
+
+```
