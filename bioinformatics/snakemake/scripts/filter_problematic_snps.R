@@ -99,7 +99,7 @@ ref <- phylotools::read.fasta(xargs$ref)
 
 # highqual_sites <-
 #   read_tsv(
-#     "/Users/joseph.lewis/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/out/sweeps/PS-58_ST999/output_files/high_QUAL_variants.tsv",
+#     "/Users/joseph.lewis/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/out_core_ref/sweeps/PS-58_ST999/output_files/high_QUAL_variants.tsv",
 #     col_names = c(
 #       "sample",
 #       "sequence_type",
@@ -116,10 +116,11 @@ ref <- phylotools::read.fasta(xargs$ref)
 #     )
 #   ) 
 #
-# ref <- phylotools::read.fasta("~/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/Reference.fasta")
-
-ref_lengths <-
+# ref <- phylotools::read.fasta("~/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/core_ref.fasta")
+#
+ref_lengths <- 
   ref |>
+  rowwise() |>
   transmute(
     gene = str_split(seq.name, " ")[[1]][1],
     length = str_length(seq.text)
@@ -151,6 +152,15 @@ threshold <- qbinom(0.05/total_ref_length, window_size, 1/window_size, lower.tai
 cat("Threshold SNPs for defining problematic region: ", threshold, "\n")
 cat("Applying rolling window ... ")
 
+# to avoid having to do qbinom for the whole df make a lookup
+threshold_lookup <-
+  tibble(
+    pos_window_size = 1:window_size,
+    pos_threshold = qbinom(0.05 / total_ref_length, pos_window_size, total_number_of_snps / total_ref_length,
+      lower.tail = FALSE
+    )
+  )
+
 full_genome_snps <-
   ref_lengths |>
   group_by(gene) |>
@@ -163,18 +173,32 @@ full_genome_snps <-
   mutate(snp = if_else(is.na(alt), 0, 1)) |>
   group_by(gene, pos) |>
   summarise(snp = any(snp == 1), .groups = "keep") |>
-  ungroup() |>
+  group_by(gene) |>
   mutate(
     n_snps_in_window =
       rollapply(snp, width = window_size, sum, partial = TRUE)
+  ) |>
+  mutate(
+    gene_length = max(pos),
+    pos_window_size =
+      case_when(
+        pos < window_size ~ pos,
+        (gene_length - pos + 1) < window_size ~ (gene_length - pos + 1),
+        TRUE ~ window_size
+      )
+  ) |>
+  left_join(
+    threshold_lookup,
+    by = join_by(pos_window_size == pos_window_size)
   )
+
 cat("Done\n")
 
 problematic_snps <-
   highqual_sites |>
   semi_join(
     full_genome_snps |>
-      filter(n_snps_in_window >= threshold),
+      filter(n_snps_in_window >= pos_threshold),
     by = join_by(gene == gene, pos == pos)
   )
 
