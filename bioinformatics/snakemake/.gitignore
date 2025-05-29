@@ -1,6 +1,11 @@
 pipe_test/
 test/
+out/
 .snakemake/
 *fastq*
 *.fai
 PS161/
+Reference.fasta
+core_ref.fasta
+test*
+out_core_ref/
