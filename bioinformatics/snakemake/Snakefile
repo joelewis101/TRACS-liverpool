@@ -42,8 +42,11 @@ rule all:
       # config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
       # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
       #config['output'] + "/pick_vs_sweep_variants.tsv"
-      config['output'] + "/variant_count.tsv"
-
+      config['output'] + "/variant_count.tsv",
+      config['output'] + "/variant_count_filtered.tsv"
+      # [r + "/output_files/problem_snps.tsv" for r in out_dirs],
+      # [r + "/output_files/high_QUAL_variants_filtered.tsv" for r in out_dirs]
+      
 rule snippy:
     input:
         reference = "Reference.fasta",
@@ -139,6 +142,23 @@ rule high_QUAL_var:
       sed "s/^/{wildcards.sample}\t{wildcards.seq_type}\t/" {output.high_qual_var} > {output.high_qual_var}.tmp &&  mv {output.high_qual_var}.tmp {output.high_qual_var}
       """
 # -------------------------------------------------------------------#
+rule filter_problem_variants:
+   input:
+     high_qual_var = config['output'] +
+     "/{type}/{sample}_{seq_type}/output_files/high_QUAL_variants.tsv",
+     reference = "Reference.fasta"
+   output:
+     high_qual_var_filt = config['output'] +
+     "/{type}/{sample}_{seq_type}/output_files/high_QUAL_variants_filtered.tsv",
+     problem_snps = config['output'] +
+     "/{type}/{sample}_{seq_type}/output_files/problem_snps.tsv"
+   priority: 8
+   shell:
+      """
+      ./scripts/filter_problematic_snps.R -v {input.high_qual_var} -p {output.problem_snps} -f {output.high_qual_var_filt} -r {input.reference}
+      """
+
+#--------------------------------------------------------------------#
 rule generate_pick_masks:
   input:
      samtools_depth = config['output'] + "/{type}/{sample}_{seq_type}/output_files/samtools_depth.tsv",
@@ -225,6 +245,98 @@ rule count_variants:
       config['output'] + "/variant_count.tsv"
    priority:
       4
+   shell:
+      """
+      scripts/count_variants.R -i {input} -o {output}
+      """
+# -------------------------------------------------------------------#
+rule add_problem_snps_to_masks:
+   input:
+     problem_snps = config['output'] +
+     "/{type}/{sample}_{seq_type}/output_files/problem_snps.tsv",
+     msk = config['output'] + "/{type}/{sample}_{seq_type}/output_files/sites_to_mask.tsv"
+   output:
+     msk = config['output'] + "/{type}/{sample}_{seq_type}/output_files/sites_to_mask_filt.tsv",
+   priority: 3
+   shell:
+      """
+      ./scripts/combine_two_mask_files.R -a {input.problem_snps} -b {input.msk} -o {output.msk}
+      """
+# --------------
+# from here just replicate the previous pipeline
+
+
+# -------------------------------------------------------------------#
+rule concat_masks_filt:
+   input:
+      [r + "/output_files/sites_to_mask_filt.tsv" for r in out_dirs]
+   output:
+      config['output'] + "/concat_mask_filt.tsv"
+   params:
+      outdir = config['output']
+   priority:
+     2
+   shell:
+      """
+      find {params.outdir} -name "sites_to_mask_filt.tsv" | xargs cat | cut -f2- | uniq > {output}
+      """
+
+# -------------------------------------------------------------------#
+rule concat_pick_vars_filt:
+   input:
+      [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants_filtered.tsv"
+       for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "picks"]
+   output:
+      config['output'] + "/concat_decomposed_pick_vars_filt_unmasked.tsv"
+   params:
+      outdir = config['output']
+   priority:
+     2
+   shell:
+      """
+      scripts/concatenate_decompose_variants.R -d {params.outdir}/picks -f high_QUAL_variants_filtered.tsv -o {output}
+      """
+
+# -------------------------------------------------------------------#
+rule concat_sweep_vars_filt:
+   input:
+      [outputdir + "/" + a + "/" + b + "_" + c + "/output_files/high_QUAL_variants_filtered.tsv"
+       for a,b,c in zip(sample_type, sample_ids, seq_type) if a == "sweeps"]
+   output:
+      config['output'] + "/concat_decomposed_sweep_vars_filt_unmasked.tsv"
+   params:
+      outdir = config['output']
+   priority:
+     2
+   shell:
+      """
+      scripts/concatenate_decompose_variants.R -d {params.outdir}/sweeps -f high_QUAL_variants_filtered.tsv -o {output}
+      """
+
+# -------------------------------------------------------------------#
+rule combine_and_mask_pick_and_sweep_vars_filt:
+   input: 
+      sweep_vars = config['output'] +
+      "/concat_decomposed_sweep_vars_filt_unmasked.tsv",
+      pick_vars = config['output'] +
+      "/concat_decomposed_pick_vars_filt_unmasked.tsv",
+      mask = config['output'] + "/concat_mask_filt.tsv"
+   output:
+      config['output'] + "/pick_vs_sweep_variants_filtered.tsv"
+   priority:
+      1
+   shell:
+      """
+      scripts/combine_and_mask_variants.R -p {input.pick_vars} -s {input.sweep_vars} -m {input.mask} -o {output}
+      """
+# -------------------------------------------------------------------#
+rule count_variants_filt:
+   input:
+      config['output'] + "/pick_vs_sweep_variants_filtered.tsv"
+   output:
+      config['output'] + "/variant_count_filtered.tsv"
+   priority:
+      1
    shell:
       """
       scripts/count_variants.R -i {input} -o {output}
