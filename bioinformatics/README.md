@@ -18,6 +18,8 @@ README in the snakmake directory details how to run the pipeline.
   + stringr
   + tidyr
   + purrr
+  + zoo
+  + phylotools
 
 ## Setting up the environment
 
