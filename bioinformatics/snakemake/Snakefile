@@ -162,8 +162,7 @@ rule filter_problem_variants:
 rule generate_pick_masks:
   input:
      samtools_depth = config['output'] + "/{type}/{sample}_{seq_type}/output_files/samtools_depth.tsv",
-     low_qual_var = config['output'] +
-     "/{type}/{sample}_{seq_type}/output_files/low_QUAL_variants.tsv",
+     low_qual_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/low_QUAL_variants.tsv",
      het_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/het_variants.tsv"
   output:
      msk = config['output'] + "/{type}/{sample}_{seq_type}/output_files/sites_to_mask.tsv",
@@ -171,7 +170,7 @@ rule generate_pick_masks:
    8
   shell:
       """ 
-      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -c 20 -o {output.msk}
+      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -l 100 -u 5000 -o {output.msk}
       """
 
 # -------------------------------------------------------------------#
@@ -249,6 +248,7 @@ rule count_variants:
       """
       scripts/count_variants.R -i {input} -o {output}
       """
+
 # -------------------------------------------------------------------#
 rule add_problem_snps_to_masks:
    input:
@@ -342,3 +342,4 @@ rule count_variants_filt:
       scripts/count_variants.R -i {input} -o {output}
       """
 # -------------------------------------------------------------------#
+
