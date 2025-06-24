@@ -112,7 +112,7 @@ if (xargs$type == "picks") {
   sites_to_mask <-
     bind_rows(
       depth |>
-        filter(depth > xargs$lowercutoff & depth < xargs$uppercutoffppercutoff) |>
+        filter(depth > xargs$lowercutoff & depth < xargs$uppercutoff) |>
         select(-depth),
       # ignore deletions
       lowqual_sites |>
