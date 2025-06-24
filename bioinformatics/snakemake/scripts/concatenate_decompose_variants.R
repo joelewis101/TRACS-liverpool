@@ -21,17 +21,21 @@ suppressMessages(library(purrr))
 decompose_variants <- function(df) {
   df_nonsnps <-
     df |> filter(nchar(ref) > 1 | nchar(alt) > 1)
-  df_out <-
-    bind_rows(
-      df_nonsnps |>
-        ungroup() |>
-        split(1:nrow(df_nonsnps)) |>
-        map(split_variants) |>
-        bind_rows() |>
-        as.data.frame(),
-      df |>
-        filter(nchar(ref) == 1 & nchar(alt) == 1)
-    )
+  if (nrow(df_nonsnps) > 0) {
+    df_out <-
+      bind_rows(
+        df_nonsnps |>
+          ungroup() |>
+          split(1:nrow(df_nonsnps)) |>
+          map(split_variants) |>
+          bind_rows() |>
+          as.data.frame(),
+        df |>
+          filter(nchar(ref) == 1 & nchar(alt) == 1)
+      )
+  } else {
+    df_out <- df
+  }
   return(df_out)
 }
 
