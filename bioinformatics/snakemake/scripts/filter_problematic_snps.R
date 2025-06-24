@@ -117,7 +117,7 @@ ref <- phylotools::read.fasta(xargs$ref)
 #   ) 
 #
 # ref <- phylotools::read.fasta("~/projects/TRACS/analysis/TRACS-liverpool/bioinformatics/snakemake/core_ref.fasta")
-#
+
 ref_lengths <- 
   ref |>
   rowwise() |>
@@ -217,8 +217,23 @@ write_tsv(
       full_genome_snps |>
         filter(n_snps_in_window >= threshold),
       by = join_by(gene == gene, pos == pos)
-    ),
-  xargs$output_filtered
+    ) |>
+    select(
+      sample,
+      sequence_type,
+      gene,
+      pos,
+      ref,
+      alt,
+      type,
+      GT,
+      QUAL,
+      AO,
+      RO,
+      DP),
+  xargs$output_filtered,
+  col_names = FALSE
 )
+
 cat("Done\n")
 cat("Finished.\n")
