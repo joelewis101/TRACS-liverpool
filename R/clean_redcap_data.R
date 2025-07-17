@@ -27,8 +27,9 @@ if (length(demographics_file) != 1) {
       paste0(here("data/raw", demographics_file))
     ) |>
     filter(redcap_event_name == "Baseline") |>
-    mutate(record_id == as.numeric(record_id)) |>
-    select(!matches("repeat"))
+    mutate(record_id = as.numeric(record_id)) |>
+    select(!matches("repeat")) |>
+    select(-gp_details) 
   outfile <- paste0(
     here("data/processed/"), "demographics_processed", datetime, ".csv"
   )
