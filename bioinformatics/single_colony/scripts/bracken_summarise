@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]
+then
+echo "This script will take all the bracken files"
+echo "by searching recursively in the directory you give" 
+echo "And will summarise"
+echo "Invalid number of positional arguments "
+ echo "cmd <outfile>"
+ exit 1
+fi
+
+
+
+
+printf "sample\tname\ttaxonomy_id\ttaxonomy_lvl\tkraken_assigned_reads\tadded_reads\tnew_est_reads\tfraction_total_reads\n" > $1
+
+
+array1=($(ls -1 *.bracken))
+
+for index in "${!array1[@]}"
+do
+
+echo "file: " ${array1[index]}
+
+sed  "s/^/${array1[index]}\t/" ${array1[index]} | sed "1d" >> $1
+
+
+done

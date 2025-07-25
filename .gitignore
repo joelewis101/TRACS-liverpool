@@ -2,5 +2,6 @@
 .DS_Store
 data/raw/*
 data/processed/redcap
+data/processed/sequencing
 data/processed/micro
 data/secrets/*

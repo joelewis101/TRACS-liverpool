@@ -4,6 +4,15 @@ A home for the bioinformatics scripts for TRACS, using snakemake.
 
 ## Structure
 
+### Single colonies
+
+Description of the analysis of single colony picks is in the `single_colony/`
+folder.
+
+### Analysis of MSWEEP/MGEMS bins
+
+This is the wrapped in a snakemake pipeline.
+
 Snakefiles are in `snakemake/` directory. Data to test the pipeline should go in
 the `snakemake/data` folder - data files aren't pushed to github as very big. A
 README in the snakmake directory details how to run the pipeline.

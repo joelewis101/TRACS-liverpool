@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# aim of this script is to run kraken on a list of files as a job array
+# give it $1 - list of files (assume in current directory)
+# kraken database $1
+# outputdir $2
+
+OUTPUTDIR=$2
+DB=$1
+
+LANE_ARRAY=($(cat lanes.txt))
+FASTQ_ARRAY1=($(sed 's/$/_1_tr.fastq.gz/' lanes.txt)) 
+FASTQ_ARRAY2=($(sed 's/$/_2_tr.fastq.gz/' lanes.txt )) 
+
+
+CURRENTJOB=$((LSB_JOBINDEX -1))
+OUTDIR=$OUTPUTDIR/${LANE_ARRAY[$CURRENTJOB]}
+
+echo "job index:" $CURRENTJOB
+echo "sample:" ${LANE_ARRAY[$CURRENTJOB]}
+echo "outdir:" $OUTPUTDIR
+echo "output:" ${LANE_ARRAY[$CURRENTJOB]}.kraken
+echo "output report:" ${LANE_ARRAY[$CURRENTJOB]}.report
+echo "database used:" $DBA
+echo "command:" kraken2 --threads 8 --gzip-compressed --output $OUTPUTDIR/${LANE_ARRAY[$CURRENTJOB]}.kraken --report $OUTPUTDIR/${LANE_ARRAY[$CURRENTJOB]}.report --db $DB ${FASTQ_ARRAY1[$CURRENTJOB]} ${FASTQ_ARRAY2[$CURRENTJOB]}
+
+kraken2 --threads 8 --gzip-compressed --output $OUTPUTDIR/${LANE_ARRAY[$CURRENTJOB]}.kraken --report $OUTPUTDIR/${LANE_ARRAY[$CURRENTJOB]}.report --db $DB ${FASTQ_ARRAY1[$CURRENTJOB]} ${FASTQ_ARRAY2[$CURRENTJOB]}
+

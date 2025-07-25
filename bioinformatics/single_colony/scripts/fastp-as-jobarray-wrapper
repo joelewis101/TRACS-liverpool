@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# aim of this script is to run fastp  on a list of files as a job array
+
+#1 positional arguments are mandatory - kill script if any are absent
+if [ $# -ne 1 ]
+then
+echo "This script will take all the fastq files  in a directory"
+echo "And run fastp on them as a jobarray" 
+echo "Invalid number of positional arguments "
+ echo "cmd <outputdir>"
+ exit 1
+fi
+
+
+OUTPUTDIR=$1
+
+LANES_ARRAY=($(ls -1 *_2.fastq* | rev | cut -c12- | rev))
+
+
+NJOBS=${#LANES_ARRAY[@]} 
+echo ""
+echo "I'm gonna get all the fastqs in this directory and run fastp on em."
+echo "Submitted as a job array"
+echo ""
+echo "Number of _1 fastqs:"
+echo $NJOBS
+
+echo "Write these filenames to lanes.txt?"
+echo "And make the outputdir?"
+echo "And submit em as ariba job?"
+
+read -p "Press enter to continue"
+
+
+rm lanes.txt -f 
+
+printf "%s\n" "${LANES_ARRAY[@]}" > lanes.txt
+
+mkdir $OUTPUTDIR
+mkdir $OUTPUTDIR/logs
+
+bsub -J "fastp[1-$NJOBS]" -o $OUTPUTDIR/logs/fastp%J.%I.o -e $OUTPUTDIR/logs/fastp%J.%I.e -R 'select[mem>2000] rusage[mem=2000]' -M2000 "submit-fastp-job-array $OUTPUTDIR"
+
+echo "Done..."

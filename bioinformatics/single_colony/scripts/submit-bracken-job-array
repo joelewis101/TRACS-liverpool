@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# aim of this script is to run kraken on a list of files as a job array
+# give it $1 - list of files (assume in current directory)
+# kraken database $1
+# outputdir $2
+
+
+DB=$1
+
+LANE_ARRAY=($(cat lanes.txt))
+
+CURRENTJOB=$((LSB_JOBINDEX -1))
+
+echo "job index:" $CURRENTJOB
+echo "file:" ${LANE_ARRAY[$CURRENTJOB]}
+echo "command:" bracken -d $DB -i ${LANE_ARRAY[$CURRENTJOB]}.report -o ${LANE_ARRAY[$CURRENTJOB]}.bracken -w ${LANE_ARRAY[$CURRENTJOB]}.bracken.report
+
+bracken -d $DB -i ${LANE_ARRAY[$CURRENTJOB]}.report -o ${LANE_ARRAY[$CURRENTJOB]}.bracken -w ${LANE_ARRAY[$CURRENTJOB]}.bracken.report
+
+
+
+

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# aim of this script is to run trimmomatic on a list of files as a job array
+
+OUTDIR=$1
+
+LANE_ARRAY=($(cat lanes.txt))
+FASTQ_ARRAY1=($(sed 's/$/_1.fastq.gz/' lanes.txt)) 
+FASTQ_ARRAY2=($(sed 's/$/_2.fastq.gz/' lanes.txt )) 
+#OUT_BASE=($(sed 's/$/_filtered.fastq.gz/' lanes.txt))
+
+
+CURRENTJOB=$((LSB_JOBINDEX -1))
+
+echo "job index:"
+echo $CURRENTJOB
+echo 
+echo 
+
+fastp -i ${FASTQ_ARRAY1[$CURRENTJOB]} -I ${FASTQ_ARRAY2[$CURRENTJOB]} -o $OUTDIR/${LANE_ARRAY[$CURRENTJOB]}_1_tr.fastq.gz -O $OUTDIR/${LANE_ARRAY[$CURRENTJOB]}_2_tr.fastq.gz -j $OUTDIR/${LANE_ARRAY[$CURRENTJOB]}.json -h $OUTDIR/${LANE_ARRAY[$CURRENTJOB]}.html
+

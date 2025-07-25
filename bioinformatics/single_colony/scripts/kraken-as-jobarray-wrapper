@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# aim of this script is to run kraken on a list of files as a job array
+
+#2 positional arguments are mandatory - kill script if any are absent
+if [ $# -ne 2 ]
+then
+echo "This script will take all the fastq files  in a directory"
+echo "And run kraken on them as a jobarray" 
+echo "Invalid number of positional arguments "
+ echo "cmd <krakendb> <outputdir>"
+ exit 1
+fi
+
+
+DB=$1
+OUTPUTDIR=$2
+
+LANES_ARRAY=($(ls -1 *_2_tr.fastq* | rev | cut -c15- | rev))
+
+
+NJOBS=${#LANES_ARRAY[@]} 
+echo ""
+echo "I'm gonna get all the fastqs in this directory and run kraken on em."
+echo "Submitted as a job array"
+echo ""
+echo "Number of _1 fastqs:"
+echo $NJOBS
+
+echo "Write these filenames to lanes.txt?"
+echo "And make the outputdir?"
+echo "And submit em as kraken job?"
+
+read -p "Press enter to continue"
+
+
+rm lanes.txt -f 
+
+printf "%s\n" "${LANES_ARRAY[@]}" > lanes.txt
+
+mkdir $OUTPUTDIR
+mkdir $OUTPUTDIR/logs
+
+bsub -J "kraken[1-$NJOBS]" -o $OUTPUTDIR/logs/kraken.%J.%I.o -e $OUTPUTDIR/logs/kraken.%J.%I.e -R 'select[mem>8000] rusage[mem=8000]' -M8000 -n 8 -R 'span[hosts=1]' "submit-kraken-job-array  $DB $OUTPUTDIR" 
+
+
+echo ""
+echo "Now go and have a nice cup of tea"
+
