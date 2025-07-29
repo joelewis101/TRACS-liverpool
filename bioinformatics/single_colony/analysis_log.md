@@ -74,7 +74,9 @@ bracken_summarise bracken_summary.tsv
 
 ```
 
-## *de novo* assemblies
+## Assemblies
+
+### *de novo* assemblies
 
 Use the sanger PaM pipelines
 https://ssg-confluence.internal.sanger.ac.uk/display/PaMI/Unicycler+%28short+reads%29+assembly+pipelinepipelines
@@ -86,3 +88,38 @@ bsub -o output.o -e error.e -q oversubscribed -R "select[mem>4000] rusage[mem=40
 
 
 ```
+
+### Assembly QC with checkM
+
+```bash
+
+# Get all the assemblies
+find assemblies/ -name "*assembly.fa" | grep unicycle > all_tracs_assemblies.txt
+
+# run check m
+checkm-as-jobarray-wrapper all_tracs_assemblies.txt checkm
+
+# collate all the files
+find . -name "quality_report.tsv" | xargs cat | grep -v Name > checkm_summary.tsv
+
+
+
+```
+
+## prokka - annotation
+
+Needs to be Genus specific - so prep list. Use
+`R/sequencing_analysis/pull_wgs_ecoli_and_kleb.R` to make lists of E. coli and
+Kleb lanes from manifest.
+
+```bash
+
+# get e coli and kleb using the R script above on the all_tracs_assemblies.txt 
+
+cat all_tracs_assemblies.txt | grep -f tracs_wgs_ecoli_assemblies.txt > tracs_ecoli_assemblies_filepath.txt
+cat all_tracs_assemblies.txt | grep -f tracs_wgs_kleb_assemblies.txt > tracs_kleb_assemblies_filepath.txt
+
+# run
+
+prokka-as-jobarray-wrapper tracs_ecoli_assemblies_filepath annotations Escherichia
+prokka-as-jobarray-wrapper tracs_kleb_assemblies_filepath annotations Klebsiella
