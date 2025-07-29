@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# this is for running prokka as array
+# should be called by prokka_as_jobarray_wrapper
+
+INPUTFILE=$1
+OUTROOTDIR=$2
+GENUS=$3
+FASTA_ARRAY=($(cat $INPUTFILE))
+CURRENTJOB=$((LSB_JOBINDEX -1))
+CURRENT_FASTA=${FASTA_ARRAY[$CURRENTJOB]}
+CURRENT_FILENAME=$(basename $CURRENT_FASTA)
+CURRENT_FILESTEM=${CURRENT_FILENAME%%.*}
+OUTDIR=$OUTROOTDIR/$CURRENT_FILESTEM
+
+echo "job index:" $CURRENTJOB
+echo "fasta file:" $CURRENT_FASTA
+echo "genus:" $GENUS
+echo "outputdir:" $OUTDIR
+echo ""
+
+prokka --outdir $OUTDIR --prefix $CURRENT_FILESTEM --genus $GENUS --usegenus --cpus 1 $CURRENT_FASTA
+
+

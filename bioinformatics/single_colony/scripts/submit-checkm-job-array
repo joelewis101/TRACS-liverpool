@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# this is for running checkm
+# should be called by checkm_as_jobarray_wrapper
+
+INPUTFILE=$1
+OUTROOTDIR=$2
+FASTA_ARRAY=($(cat $INPUTFILE))
+CURRENTJOB=$((LSB_JOBINDEX -1))
+CURRENT_FASTA=${FASTA_ARRAY[$CURRENTJOB]}
+CURRENT_FILENAME=$(basename $CURRENT_FASTA)
+CURRENT_FILESTEM=${CURRENT_FILENAME%%.*}
+OUTDIR=$OUTROOTDIR/$CURRENT_FILESTEM
+
+echo "job index:" $CURRENTJOB
+echo "fasta file:" $CURRENT_FASTA
+echo "outputdir:" $OUTDIR
+echo ""
+
+mkdir $OUTDIR
+checkm2 predict -o $OUTDIR -i $CURRENT_FASTA

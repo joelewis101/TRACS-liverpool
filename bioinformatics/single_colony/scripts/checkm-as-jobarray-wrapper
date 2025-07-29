@@ -1,0 +1,34 @@
+#!/bin/bash
+
+
+if [ $# -ne 2 ]
+then
+echo "This script will run checkm as a job array"
+echo "It wants input file of file names (text file, one per line)"
+echo ""
+ echo "cmd <inputfile> <outputdir>"
+ exit 1
+fi
+
+INPUTFILE=$1
+FASTA_ARRAY=($(cat $INPUTFILE))
+OUTPUTDIR=$2
+NJOBS=${#FASTA_ARRAY[@]} 
+echo ""
+echo "I'm gonna run checkm on these"
+echo "Submitted as a job array"
+echo ""
+echo "Number of fastas:" $NJOBS
+
+echo "Make the outputdir?"
+echo "And submit em with bsub?"
+
+read -p "Press any key to continue: ctrl-C to quit"
+
+
+mkdir $OUTPUTDIR
+mkdir $OUTPUTDIR/logs
+
+
+bsub -J "checkm[1-$NJOBS]" -o $OUTPUTDIR/logs/checkm.%J.%I.o -e $OUTPUTDIR/logs/checkm.%J.%I.e -R 'select[mem>8000] rusage[mem=8000]' -M8000 -n1 -R "span[hosts=1]" "submit-checkm-job-array $INPUTFILE $OUTPUTDIR"
+
