@@ -170,7 +170,7 @@ rule generate_pick_masks:
    8
   shell:
       """ 
-      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -l 100 -u 5000 -o {output.msk}
+      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -l 20 -u 5000 -o {output.msk}
       """
 
 # -------------------------------------------------------------------#
