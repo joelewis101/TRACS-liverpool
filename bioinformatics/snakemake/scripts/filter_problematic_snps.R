@@ -7,6 +7,8 @@ parser <- ArgumentParser(description= 'Take a TSV of variants and filter for pro
 parser$add_argument('--highQUAL_sites_file', '-v',required = TRUE,  help= 'input variant file as tsv (formatted as output from pipeline rule high_QUAL_var)')
 parser$add_argument('--output-problem', '-p', required = TRUE, help= 'output problem snp file')
 parser$add_argument('--output-filtered', '-f', required = TRUE, help= 'output filtered snp file')
+parser$add_argument('--output-problem', '-p', required = TRUE, help= 'output problem snp file')
+parser$add_argument('--output-filtered', '-f', required = TRUE, help= 'output filtered snp file')
 parser$add_argument('--ref', '-r', required = TRUE, help= "reference fasta")
 
 xargs<- parser$parse_args()
@@ -231,6 +233,10 @@ write_tsv(
       AO,
       RO,
       DP),
+  bind_rows(depth |>
+              filter(depth > xargs$lowercutoff & depth < xargs$uppercutoff) |>
+              select(-depth)
+            ),
   xargs$output_filtered,
   col_names = FALSE
 )
