@@ -5,8 +5,8 @@ library(argparse)
 parser <- ArgumentParser(description= 'Take a TSV of variants and filter for problematic SNPs based on spatial clustering. INDELS are ignored.')
 
 parser$add_argument('--highQUAL_sites_file', '-v',required = TRUE,  help= 'input variant file as tsv (formatted as output from pipeline rule high_QUAL_var)')
-parser$add_argument('--output-problem', '-p', required = TRUE, help= 'output problem snp file')
-parser$add_argument('--output-filtered', '-f', required = TRUE, help= 'output filtered snp file')
+parser$add_argument('--lowercutoff', '-l', help= 'lower depth cutoff', type= 'double')
+parser$add_argument('--uppercutoff', '-u', help= 'upper depth cutoff', type= 'double')
 parser$add_argument('--output-problem', '-p', required = TRUE, help= 'output problem snp file')
 parser$add_argument('--output-filtered', '-f', required = TRUE, help= 'output filtered snp file')
 parser$add_argument('--ref', '-r', required = TRUE, help= "reference fasta")
@@ -213,13 +213,17 @@ write_tsv(problematic_snps, xargs$output_problem)
 cat("Done\n")
 
 cat("Writing filtered SNPs to", xargs$output_filtered, "...")
+cat(paste0("using lower depth cutoff", xargs$lowercutoff, "\n"))
+cat(paste0("using upper depth cutoff", xargs$uppercutoff, "\n"))
+
 write_tsv(
   highqual_sites |>
     anti_join(
       full_genome_snps |>
         filter(n_snps_in_window >= threshold),
-      by = join_by(gene == gene, pos == pos)
-    ) |>
+      by = join_by(gene == gene, pos == pos)) |>
+        filter(DP > xargs$lowercutoff & DP < xargs$uppercutoff)
+     |>
     select(
       sample,
       sequence_type,
@@ -232,14 +236,10 @@ write_tsv(
       QUAL,
       AO,
       RO,
-      DP),
-  bind_rows(depth |>
-              filter(depth > xargs$lowercutoff & depth < xargs$uppercutoff) |>
-              select(-depth)
-            ),
+      DP
+      ),
   xargs$output_filtered,
-  col_names = FALSE
-)
+  col_names = FALSE)
 
 cat("Done\n")
 cat("Finished.\n")

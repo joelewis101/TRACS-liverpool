@@ -42,34 +42,35 @@ rule all:
       # config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
       # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
       #config['output'] + "/pick_vs_sweep_variants.tsv"
-      config['output'] + "/variant_count.tsv",
-      config['output'] + "/variant_count_filtered.tsv"
+      #config['output'] + "/variant_count.tsv",
+      #config['output'] + "/variant_count_filtered.tsv"
+      config['output'] + "/snp_matrix.tsv"
       # [r + "/output_files/problem_snps.tsv" for r in out_dirs],
       # [r + "/output_files/high_QUAL_variants_filtered.tsv" for r in out_dirs]
       
-rule snippy:
-    input:
-        reference = "Reference.fasta",
-        # r1 = [p + R1_suff for p in sample_read_paths],
+#rule snippy:
+ #   input:
+        #reference = "Reference.fasta",
+       # r1 = [p + R1_suff for p in sample_read_paths],
         # r2 = [p + R2_suff for p in sample_read_paths]
-        r1 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R1_suff,
-        r2 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R2_suff
-    output:
-        vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
-        bam = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.bam",
+        #r1 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R1_suff,
+        #r2 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R2_suff
+    #output:
+        #vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
+        #bam = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.bam",
         # snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
-    params:
-        snippyoutdir = directory(config['output'] + "/{type}/{sample}_{seq_type}/snps"),
+    #params:
+        #snippyoutdir = directory(config['output'] + "/{type}/{sample}_{seq_type}/snps"),
         # vcf = [r + "/snps/snps.raw.vcf" for r in out_dirs],
         # bam = [r + "/snps/snps.bam" for r in out_dirs]
         # snippyoutdir = directory([r + "/snps" for r in out_dirs])
-    priority:
-        10
-    log:
-        config['output'] + "/{type}_{sample}_{seq_type}_snippy.log"
+    #priority:
+        #10
+    #log:
+        #config['output'] + "/{type}_{sample}_{seq_type}_snippy.log"
         # [r + "/snippy.log" for r in out_dirs],
-    shell:
-        "snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
+    #shell:
+        #"snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
 # -----------------------------------------------------------------#
 
@@ -339,4 +340,15 @@ rule count_variants_filt:
       scripts/count_variants.R -i {input} -o {output}
       """
 # -------------------------------------------------------------------#
-
+rule snp_matrix:
+   input:
+      config['output'] + "/pick_vs_sweep_variants_filtered.tsv"
+   output:
+      config['output'] + "/snp_matrix.tsv"
+   priority:
+      1
+   shell:
+      """
+      scripts/generate_snp_matrix.R -i {input} -o {output}
+      """
+# -------------------------------------------------------------------#
