@@ -155,7 +155,7 @@ rule filter_problem_variants:
    priority: 8
    shell:
       """
-      ./scripts/filter_problematic_snps.R -v {input.high_qual_var} -p {output.problem_snps} -f {output.high_qual_var_filt} -r {input.reference}
+      ./scripts/filter_problematic_snps.R -v {input.high_qual_var} -p {output.problem_snps} -l 20 -u 5000 -f {output.high_qual_var_filt} -r {input.reference}
       """
 
 #--------------------------------------------------------------------#
@@ -262,9 +262,6 @@ rule add_problem_snps_to_masks:
       """
       ./scripts/combine_two_mask_files.R -a {input.problem_snps} -b {input.msk} -o {output.msk}
       """
-# --------------
-# from here just replicate the previous pipeline
-
 
 # -------------------------------------------------------------------#
 rule concat_masks_filt:
