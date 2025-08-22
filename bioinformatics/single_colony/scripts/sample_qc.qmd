@@ -1,0 +1,301 @@
+---
+title: TRACS sample QC
+date: today
+date-format: "D MMMM YYYY"
+format: 
+  html:
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(here)
+library(janitor)
+
+
+sanger_manifest <-
+  read_csv(here("data/raw/sanger/TRACS_sequencing_sample_metadata20250716.csv")) |>
+  janitor::clean_names()
+
+```
+
+# Introduction
+
+Reads trimmed with fastp, assign species wioth kraken2/bracken, Sanger assembly
+pipeline (using unicycler) which automatically runs quast on assemblies, checkm2
+for contamination/completeness
+
+# Results
+
+## Reads
+
+Some samples are recorded in Sanger manifest as K. pneumo that are E. coli and
+vice-versa.
+
+Filter out samples that have < 0.5 (Escherichia + Shigella) reads or < 0.5
+Klebsiella spp. reads. Use Kraken species assignment for downstream processing,
+defining
+
+* *E. coli* as > 50% *E. coli* or *Shigella spp.* reads
+* *Klebsiella pneumoniae species complex* as >50% *Klebsiella spp.* reads
+
+
+```{r}
+#| label: fig-fastp
+
+
+df_fastp <-
+  read_tsv(here("data/processed/sequencing/json_summary.tsv"),
+    col_names = c("sample", "reads_before_filter", "reads_after_filter")
+  ) |>
+  mutate(
+    sample =
+      str_extract(sample, "(?<= )[0-9].+(?=\\.fastq.gz -I)"),
+    dropped_reads = reads_before_filter - reads_after_filter
+  ) 
+
+df_fastp |>
+  select(-reads_before_filter) |>
+  pivot_longer(-sample) |>
+  ggplot(aes(fct_reorder(sample, value), value, color = name, fill = name)) +
+  geom_col() + 
+  labs(title = "Reads by sample following QC with fastp",
+    x = "sample id", y= "number of reads") +
+    coord_flip() +
+    theme(axis.text.y = element_text(size = 3)) 
+
+df_fastp |>
+  ggplot(aes(reads_after_filter)) +
+  geom_histogram(bins = 100) +
+  scale_x_log10(limits = c(1e4, 1e8)) +
+    labs(title = "Histogram of number of reads per sample")
+
+```
+
+```{r}
+#| label: fig-kraken
+#| fig.height: 20
+#| fig.width: 8
+
+df_kraken <-
+  read_tsv(here("data/processed/sequencing/bracken_summary.tsv")) |>
+  mutate(sample = gsub(".bracken", "", sample))
+
+
+krak_sort_var <-
+  df_kraken |>
+  filter(name == "Escherichia coli" | name == "Klebsiella pneumoniae") |>
+  arrange(desc(fraction_total_reads)) |>
+  select(sample) |>
+  unique() |>
+  pull(sample)
+
+
+df_kraken <-
+  df_kraken |>
+  left_join(
+    sanger_manifest |>
+      select(id, sample_common_name),
+    by = join_by(sample == id)
+  )
+
+df_kraken |>
+  mutate(sample = factor(sample, levels = krak_sort_var)) |>
+  rowwise() |>
+  mutate(genus = str_split(name, " ")[[1]][1]) |>
+  filter(fraction_total_reads > 0.1) |>
+  ggplot(aes(sample, fraction_total_reads, fill = genus)) +
+  geom_col() +
+  coord_flip() +
+  facet_grid(sample_common_name ~ ., scales = "free") +
+  ylim(c(0, 1)) +
+  labs(title = "Kraken read assignment", subtitle = "facet species here is what is recorded in sanger manifest")
+
+```
+
+```{r}
+#| label: fig-kraken2
+
+# the acinetobacter is a kleb
+
+# df_kraken |>
+#   filter(sample_common_name == "Escherichia coli") |>
+#   filter(name == "Escherichia coli") |>
+#   mutate(e_coli_reads = fraction_total_reads) |>
+#   ggplot(aes(fraction_total_reads)) +
+#   geom_histogram(bins = 100) +
+#   labs(title = "distribution of % E coli reads for samples
+#     recorded as E coli in manifest")
+
+
+df_kraken |>
+  filter(sample_common_name == "Escherichia coli") |>
+  left_join(
+    df_kraken |>
+      filter(name == "Escherichia coli") |>
+      mutate(e_coli_reads = fraction_total_reads) |>
+      select(sample, e_coli_reads)
+  ) |>
+  rowwise() |>
+  mutate(
+    genus = str_split(name, " ")[[1]][1],
+    name = gsub("Escherichia", "E.", name)
+  ) |>
+  filter(e_coli_reads < 0.5, fraction_total_reads > 0.1) |>
+  ggplot(aes(fct_reorder(sample, e_coli_reads), fraction_total_reads, fill = name)) +
+  geom_col() +
+  facet_wrap(~sample_common_name, scales = "free", ncol = 1) +
+  ylim(c(0, 1)) +
+  coord_flip() +
+  labs(title = "Read assignment for samples recorded as E coli that
+    have < 0.5 fraction E coli reads")
+
+
+
+df_kraken |>
+  filter(sample_common_name == "Klebsiella pneumoniae") |>
+  left_join(
+    df_kraken |>
+      filter(name == "Klebsiella pneumoniae") |>
+      mutate(kleb_reads = fraction_total_reads) |>
+      select(sample, kleb_reads)
+  ) |>
+  rowwise() |>
+  mutate(genus = str_split(name, " ")[[1]][1]) |>
+  filter(kleb_reads < 0.75, fraction_total_reads > 0.1) |>
+  ggplot(aes(fct_reorder(sample, kleb_reads), fraction_total_reads, fill = name)) +
+  geom_col() +
+  facet_wrap(~sample_common_name, scales = "free", ncol = 1) +
+  ylim(c(0, 1)) +
+  coord_flip() +
+  labs(title = "Read assignment for samples recorded as K. Pneumo with 
+     < 0.5 fraction K. pneumo reads")
+
+# some e coli misidentfied as E coil and vice-versa
+
+df_read_qc <-
+df_kraken |>
+  rowwise() |>
+  mutate(genus = str_split(name, " ")[[1]][1]) |>
+  filter(genus %in% c("Escherichia", "Klebsiella", "Shigella") ) |>
+  group_by(sample, genus) |>
+  summarise(frac_reads = sum(fraction_total_reads)) |>
+  pivot_wider(id_cols = sample, values_from = frac_reads, names_from =
+    genus) |>
+  ungroup() |>
+  mutate(kraken_assignment = 
+    case_when(
+        Escherichia > 0.5 & Klebsiella > 0.5 ~ "Something has gone wrong!",
+        Escherichia > 0.5 ~ "Escherichia",
+	Klebsiella > 0.5 ~ "Klebsiella",
+        TRUE ~ "Neither"
+)) |>
+  left_join(
+    df_fastp |>
+      select(sample, reads_after_filter) |>
+      mutate(sample = gsub("_1$|_2$", "", sample)) |>	
+      group_by(sample) |>
+	summarise(reads_after_filter = sum(reads_after_filter))
+)
+
+# df_read_qc |> 
+#   mutate(low_reads = reads_after_filter < 5e5) |>
+#   group_by(kraken_assignment, low_reads) |>
+  # count()
+
+
+
+```
+## Assembly QC
+
+Incorporate output from quast, checkm. Require
+
+* completeness > 90%
+* contamination < 5%
+* total assembled length > 4Mb and < 6.5Mb
+* N50 > 20kb
+
+```{r}
+#| label: fig-assembly
+#| fig.width: 10
+#| fig.height: 6
+
+df_quast <-
+  read_tsv(here("data/processed/sequencing/summary_quast_report.tsv")) |>
+    janitor::clean_names()
+
+
+df_checkm <-
+  read_tsv(here("data/processed/sequencing/checkm_summary.tsv"),
+  col_names = c( 
+      "Name", "Completeness","Contamination","Completeness_Model_Used",
+      "Translation_Table_Used","Coding_Density","Contig_N50",
+      "Average_Gene_Length","Genome_Size","GC_Content",
+      "Total_Coding_Sequences","Additional_Notes" 
+      )) |>
+    janitor::clean_names()
+
+df_qc <-
+df_read_qc |>
+  left_join(
+df_checkm |>
+  mutate(name = gsub(".assembly","", name)) |>
+    select(name, completeness, contamination),
+    by = join_by(sample == name)
+) |> mutate(low_reads = reads_after_filter < 5e5,
+  contaminated = contamination > 5,
+  incomplete = completeness < 90) |>
+  group_by(kraken_assignment, contaminated, incomplete) |>
+left_join(
+  df_quast |> 
+      mutate(assembly = gsub(".assembly","", assembly),
+      assembly = gsub("(?<=_1|2)_", "#", assembly, perl = TRUE)) |>
+      select(assembly, n50, total_length)
+    ,
+    by = join_by(sample == assembly)
+      )
+
+df_qc|>
+  ggplot(aes(total_length, n50, color = contaminated, shape =
+	incomplete)) +
+  geom_point() +
+  geom_hline(yintercept = 20e3) +
+  geom_vline(xintercept = c(4e6, 6.5e6)) +
+  facet_wrap(~kraken_assignment) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Assembly QC: n50, assmbled length and contamination/incompleteness", subtitle = "Incomplete defined as < 90% completeness\nContaminated defined as > 5% contamination\nLines show length 4-6.5Mb and N50 > 20kb")
+
+
+```
+
+# Final numbers of samples following qc
+
+```{r}
+#| label: generate-final-sample-list
+
+df_qc <-
+df_qc |>
+  mutate(low_n50 = n50 < 20e3,
+    wrong_length = total_length < 4e6 | total_length > 6.5e6)
+
+df_qc |> 
+  group_by(kraken_assignment, incomplete, contaminated, low_n50, wrong_length) |> 
+count()
+
+write_csv(df_qc, here("data/processed/sequencing/final_qc.csv"))
+
+```
+
+
+
+
+
+
+

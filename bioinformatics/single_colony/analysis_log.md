@@ -99,6 +99,8 @@ find assemblies/ -name "*assembly.fa" | grep unicycle > all_tracs_assemblies.txt
 # run check m
 checkm-as-jobarray-wrapper all_tracs_assemblies.txt checkm
 
+# a few samples failed and needed 12G ram instead on 4
+
 # collate all the files
 find . -name "quality_report.tsv" | xargs cat | grep -v Name > checkm_summary.tsv
 
@@ -106,12 +108,14 @@ find . -name "quality_report.tsv" | xargs cat | grep -v Name > checkm_summary.ts
 
 ```
 
+## Final QC
+
+Use `R/sequencing_analysis/pull_wgs_ecoli_and_kleb.R` to make lists of E. coli
+and Kleb lanes from manifest and qc files and upload to the farm for next steps
+
 ## prokka - annotation
 
-Needs to be Genus specific - so prep list. Use
-`R/sequencing_analysis/pull_wgs_ecoli_and_kleb.R` to make lists of E. coli and
-Kleb lanes from manifest.
-
+Needs to be Genus specific - so prep list. 
 ```bash
 
 # get e coli and kleb using the R script above on the all_tracs_assemblies.txt 
@@ -121,5 +125,22 @@ cat all_tracs_assemblies.txt | grep -f tracs_wgs_kleb_assemblies.txt > tracs_kle
 
 # run
 
-prokka-as-jobarray-wrapper tracs_ecoli_assemblies_filepath annotations Escherichia
-prokka-as-jobarray-wrapper tracs_kleb_assemblies_filepath annotations Klebsiella
+prokka-as-jobarray-wrapper tracs_ecoli_assemblies_filepath.txt annotations Escherichia
+prokka-as-jobarray-wrapper tracs_kleb_assemblies_filepath.txt annotations Klebsiella
+
+```
+
+## panaroo - core gene alignment
+
+```bash
+
+cat tracs_wgs_ecoli_assemblies.txt | sed 's/.assembly.fa/.gff/' > > tracs_wgs_ecoli_annotations.txt
+find annotations/ -name *.gff | grep -f tracs_wgs_ecoli_annotations.txt > tracs_ecoli_annotations_filepath.txt
+
+
+bsub -o pangenome/log.o -e pangenome/log.e -q normal -R "select[mem>20000] rusage[mem=20000]" -M20000 -n 6 -R "span[hosts=1]" "panaroo -i tracs_ecoli_annotations_filepath.txt -o pangenome --clean-mode strict -t 6 -a core"
+```
+
+
+```
+
