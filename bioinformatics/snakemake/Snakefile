@@ -31,45 +31,31 @@ print(sweeps)
 
 rule all:
    input:
-      # [r + "/snps/snps.raw.vcf" for r in out_dirs],
-      # [r + "/snps/snps.bam" for r in out_dirs],
-      # [r + "/output_files/samtools_depth.tsv" for r in out_dirs],
-      # [r + "/output_files/low_QUAL_variants.tsv" for r in out_dirs],
-      # [r + "/output_files/high_QUAL_variants.tsv" for r in out_dirs],
-      # [r + "/output_files/het_variants.tsv" for r in out_dirs],
-      # [r + "/output_files/sites_to_mask.tsv" for r in out_dirs],
       # config['output'] + "/concat_mask.tsv",
       # config['output'] + "/concat_decomposed_pick_vars_unmasked.tsv",
       # config['output'] + "/concat_decomposed_sweep_vars_unmasked.tsv",
-      #config['output'] + "/pick_vs_sweep_variants.tsv"
-      #config['output'] + "/variant_count.tsv",
-      #config['output'] + "/variant_count_filtered.tsv"
+      # config['output'] + "/pick_vs_sweep_variants.tsv"
+      config['output'] + "/variant_count.tsv",
+      config['output'] + "/variant_count_filtered.tsv",
       config['output'] + "/snp_matrix.tsv"
-      # [r + "/output_files/problem_snps.tsv" for r in out_dirs],
-      # [r + "/output_files/high_QUAL_variants_filtered.tsv" for r in out_dirs]
       
 rule snippy:
    input:
         reference = "Reference.fasta",
-       # r1 = [p + R1_suff for p in sample_read_paths],
-       #  r2 = [p + R2_suff for p in sample_read_paths]
         r1 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R1_suff,
         r2 = config['reads']+"/{type}"+"/{sample}_{seq_type}"+R2_suff
-    output:
+   output:
         vcf = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.raw.vcf",
         bam = config['output'] + "/{type}/{sample}_{seq_type}/snps/snps.bam",
-        # snippyoutdir = directory(config['output'] + "/{type}/{sample}/snps"),
-    params:
+   params:
         snippyoutdir = directory(config['output'] + "/{type}/{sample}_{seq_type}/snps"),
         vcf = [r + "/snps/snps.raw.vcf" for r in out_dirs],
         bam = [r + "/snps/snps.bam" for r in out_dirs]
-        # snippyoutdir = directory([r + "/snps" for r in out_dirs])
-    priority:
+   priority:
         10
-    log:
+   log:
         config['output'] + "/{type}_{sample}_{seq_type}_snippy.log"
-        # [r + "/snippy.log" for r in out_dirs],
-    shell:
+   shell:
         "snippy --force --outdir {params.snippyoutdir} --ref {input.reference} --R1 {input.r1} --R2 {input.r2} > {log} 2>&1"
 
 # -----------------------------------------------------------------#
