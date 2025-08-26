@@ -49,32 +49,50 @@ B --> C[snps.bam
 *read mapping from bwa mem*]
 B --> D[snps.raw.vcf
 *variant calls from FreeBayes*]
-D -->|low_QUAL_variants| E[low_QUAL_variants.vcf
-*all variants with mapping QUAL below threshold to mask in downstream analysis*]
+D -->|low_QUAL_var| E[low_QUAL_variants.vcf
+*all variants wieth variant QUAL below threshold to mask in downstream analysis*]
 C -->|samtools_depth_calc| F[samtoools_depth.tsv
 *depth by site excluding low quality base and mapping quality to mask in downstream analysis*]
-D -->|het_variants| G[het_variants.tsv 
+D -->|het_var| G[het_variants.tsv 
 *all het ie not 1/1 genotype variants to mask in pick analysis, as snippy would do*]
 D -->|high_qual_variants| H[high_QUAL_variants.tsv
-*all variants, filtered only for variant quaity ie QUAL and depth as per snippy, decomposed and normalised with vt including the necessary fields to calculate VAF*]
-E -->|generate_mask| I[sites_to_mask.tsv
+*all variants, filtered only for variant quaity ie QUAL, decomposed and normalised with vt including the necessary fields to calculate VAF*]
+E -->|generate_pick_masks| I[sites_to_mask.tsv
 *bases to mask in downstream analysis:*
 
 *-  if PICK then all sites with depth < 20 in samtools_depth.tsv, and all variants in low_QUAL_variants.tsv and het_variants.tsv*
 
 *- if SWEEP then the same but don't include het_variants.tsv in mask*]
-G -->|generate_mask| I
-F -->|generate_mask| I
-I -->|combine_pick_mask| J[all_pick_sites_to_mask.tsv
-*combined deduplicated sites to mask from all picks*]
-H -->|combine_pick_variants| K[all_pick_variants.tsv
-*combined deduplicated variants from all picks*]
-K -->|compare_snps_pick_and_sweep| L[pick_vs_sweep_snps.tsv
+G -->|generate_pick_mask| I
+F -->|generate_pick_mask| I
+I -->|concat_masks| J[concat_mask.tsv
+*combined deduplicated sites to mask from all samples - picks and sweeps*]
+H -->|concat_pick_vars| K[concat_decomposed_pick_vars_unmasked.tsv
+concat_decomposed_sweeps_vars_unmasked
+*combined deduplicated variants from all picks/sweeps*]
+H -->|concat_sweep_vars| K
+K -->|combine_and_mask_pick_and_sweep_vars| L[pick_vs_sweep_variants.tsv
 *SNPs only and whether they are present in pick, sweep, or both*]
-H -->|compare_snps_pick_and_sweep| L
-I -->|compare_snps_pick_and_sweep| L
-J -->|compare_snps_pick_and_sweep| L
+J -->|combine_and_mask_pick_and_sweep_vars| L
 
+
+
+
+H -->|filter_problem_variants| M[problem_snps.tsv]
+M -->|add_problem_snps_to_mask| O[sites_to_mask_filt.tsv]
+I -->|add_problem_snps_to_mask| O[sites_to_mask_filt.tsv]
+H -->|filter_problem_variants| N[high_QUAL_variants_filtered.tsv]
+
+O -->|combine_and_mask_pick_and_sweep_vars_filt| P[pick_vs_sweep_variants_filtered.tsv
+*SNPs only and whether they are present in pick, sweep, or both
+
+excluding problematic SNPs*]
+
+N --> |combine_and_mask_pick_and_sweep_vars_filt| P
+
+L--> |count_variants| Q[variant_count.tsv]
+P--> |count_variants_filt| R[variant_count_filtered.tsv]
+R--> |snp_matrix| S[snp_matrix.tsv]
 ```
 
 
