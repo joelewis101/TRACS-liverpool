@@ -13,7 +13,7 @@ parser$add_argument('--het_sites_file', '-s', help= 'het sites tsv')
 parser$add_argument('--lowQUAL_sites_file', '-q', help= 'low qual sites tsv')
 parser$add_argument('--output', '-o', help= 'output file')
 parser$add_argument('--lowercutoff', '-l', help= 'lower depth cutoff', type= 'double')
-parser$add_argument('--uppercutoff', '-u', help= 'upper depth cutoff', type= 'double')
+# parser$add_argument('--uppercutoff', '-u', help= 'upper depth cutoff', type= 'double')
 parser$add_argument('--type', '-t', help= "picks|sweeps")
 
 xargs<- parser$parse_args()
@@ -87,7 +87,7 @@ depth <-  read_tsv(xargs$depth_file,
 
 cat("generating mask file\n")
 cat(paste0("using lower depth cutoff", xargs$lowercutoff, "\n"))
-cat(paste0("using upper depth cutoff", xargs$uppercutoff, "\n"))
+# cat(paste0("using upper depth cutoff", xargs$uppercutoff, "\n"))
 cat(paste0("sample type: ", xargs$type, "\n"))
 
 if (xargs$type == "picks") {
@@ -95,7 +95,7 @@ if (xargs$type == "picks") {
   sites_to_mask <-
     bind_rows(
       depth |>
-        filter(depth > xargs$lowercutoff & depth < xargs$uppercutoff) |>
+        filter(depth < xargs$lowercutoff) |> # & depth < xargs$uppercutoff) |>
         select(-depth),
       # ignore deletions
       het_sites |>
@@ -112,7 +112,7 @@ if (xargs$type == "picks") {
   sites_to_mask <-
     bind_rows(
       depth |>
-        filter(depth > xargs$lowercutoff & depth < xargs$uppercutoff) |>
+        filter(depth < xargs$lowercutoff) |> # & depth < xargs$uppercutoffppercutoff) |>
         select(-depth),
       # ignore deletions
       lowqual_sites |>
