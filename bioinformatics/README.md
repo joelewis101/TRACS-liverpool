@@ -39,7 +39,7 @@ Tested on my macbook M3 pro
 Needs to be on osx-64 platform (if on mac) because of availability of snippy on
 bioconda - see below:
 
-`conda create --platform osx-64 -n snakemake`  
+`conda create --platform osx-64 -n snakemake_TRACS`  
 `conda activate snakemake_TRACS`
 
 ### Install snippy
