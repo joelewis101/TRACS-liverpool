@@ -17,17 +17,18 @@ for a,b,c in zip(sample_type, sample_ids, seq_type):
   sample_read_paths.append(config['reads'] + "/" + a + "/" + b + "_" + c)
   out_dirs.append(config['output'] + "/" + a + "/" + b + "_" + c)
 
-
-print("TRACS msweep pick vs sweep pipeline v0.1")
+print("****************************************")
+print("TRACS msweep pick vs sweep pipeline v1.0")
+print("            10 Oct 2025")
+print("****************************************")
+print("")
 print("Read directory: "  + config['reads'])
 print("Read suffixes: " + R1_suff + ", " + R2_suff)
 print("Found sample types: ", sample_type)
 print("Found sample IDs", sample_read_paths)
 print("Found sequence types: ", seq_type)
 print("Output directories: ", out_dirs)
-print(picks)
-print(sweeps)
-# print("Found sample IDs: ", sample_ids)
+print("")
 
 rule all:
    input:
@@ -37,7 +38,9 @@ rule all:
       # config['output'] + "/pick_vs_sweep_variants.tsv"
       config['output'] + "/variant_count.tsv",
       config['output'] + "/variant_count_filtered.tsv",
-      config['output'] + "/snp_matrix.tsv"
+      config['output'] + "/snp_matrix.tsv",
+      config['output'] + "/mapping_stats_all_samples.tsv",
+      # [s + "/output_files/mapping_stats.tsv" for s in out_dirs]
       
 rule snippy:
    input:
@@ -338,3 +341,36 @@ rule snp_matrix:
       scripts/generate_snp_matrix.R -i {input} -o {output}
       """
 # -------------------------------------------------------------------#
+
+rule generate_mapping_stats:
+  input:
+     samtools_depth = config['output'] + "/{type}/{sample}_{seq_type}/output_files/samtools_depth.tsv",
+     het_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/het_variants.tsv",
+     problem_snps = config['output'] + "/{type}/{sample}_{seq_type}/output_files/problem_snps.tsv",
+     high_qual_snps_unfilt = config['output'] + "/{type}/{sample}_{seq_type}/output_files/high_QUAL_variants.tsv",
+     high_qual_snps_filt = config['output'] + "/{type}/{sample}_{seq_type}/output_files/high_QUAL_variants_filtered.tsv",
+     low_qual_var = config['output'] + "/{type}/{sample}_{seq_type}/output_files/low_QUAL_variants.tsv",
+  output:
+     map_sum = config['output'] + "/{type}/{sample}_{seq_type}/output_files/mapping_stats.tsv",
+  priority:
+   8
+  shell:
+      """ 
+      scripts/summarise_mapping.R -s {input.samtools_depth} -he {input.het_var} \
+            -p {input.problem_snps} -hqu {input.high_qual_snps_unfilt} -hqf \
+           {input.high_qual_snps_filt} -lq {input.low_qual_var} -o \
+           {output.map_sum}
+      """
+
+#--------------------------------------------------------------------#
+
+rule concat_mapping_stats:
+   input:
+     map_sum = [s + "/output_files/mapping_stats.tsv" for s in out_dirs]
+   output:
+     concat_map_sum =  config['output'] + "/mapping_stats_all_samples.tsv"
+   shell:
+      """
+      find . -name "mapping_stats.tsv" | xargs cat | sed "1p; /^sample/d" > {output}
+      """
+
