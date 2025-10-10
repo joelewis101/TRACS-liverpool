@@ -1,18 +1,22 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
-library(dplyr)
-library(readr)
-library(tidyr)
+suppressMessages(library(argparse))
+suppressMessages(library(dplyr))
+suppressMessages(library(readr))
+suppressMessages(library(tidyr))
+
+options(dplyr.summarise.inform = FALSE)
 
 parser <- ArgumentParser(description= 'Count variant differences between picks and sweep')
 parser$add_argument('--pick_vs_sweep_variants', '-i', help= 'pick vs sweep variant file')
 parser$add_argument('--output', '-o', help= 'output file')
 
+cat("Running count_variants...\n")
 xargs<- parser$parse_args()
 
+cat("Loading", xargs$pick_vs_sweep_variants, "\n")
 pick_vs_sweep_variants <-
-  read_tsv(xargs$pick_vs_sweep_variants)
+  read_tsv(xargs$pick_vs_sweep_variants, show_col_types = FALSE)
 
 pick_vs_sweep_variants <- pick_vs_sweep_variants %>%
   mutate(Method = case_when(

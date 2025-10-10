@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 
 parser <- ArgumentParser(description= 'Concatenate all pick variant files by searching recursively in a given directoty')
 
@@ -15,7 +15,7 @@ suppressMessages(library(readr))
 suppressMessages(library(stringr))
 suppressMessages(library(tidyr))
 suppressMessages(library(purrr))
-
+options(dplyr.summarise.inform = FALSE)
 
 
 decompose_variants <- function(df) {
@@ -74,6 +74,7 @@ split_variants <- function(row) {
     )
   return(row)
 }
+cat("Running concatinate_decompose_variant script\n")
 cat(paste0("looking in directory ", xargs$directory, " for files ", xargs$file, "\n"))
 
 files <- list.files(xargs$directory, pattern = xargs$file, recursive = TRUE)
@@ -84,7 +85,8 @@ out_df <-
   map(paste0(xargs$directory,"/",files),
       \(x) decompose_variants(
         read_tsv(x,
-                 col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+                col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP"),
+                show_col_types = FALSE
         ))
   ) |>
   bind_rows() |>

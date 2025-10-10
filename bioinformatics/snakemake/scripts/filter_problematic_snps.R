@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 
 parser <- ArgumentParser(description= 'Take a TSV of variants and filter for problematic SNPs based on spatial clustering. INDELS are ignored.')
 
@@ -21,7 +21,7 @@ suppressMessages(library(tidyr))
 suppressMessages(library(phylotools))
 suppressMessages(library(purrr))
 suppressMessages(library(zoo))
-
+options(dplyr.summarise.inform = FALSE)
 
 decompose_variants <- function(df) {
   df_nonsnps <-
@@ -76,6 +76,7 @@ split_variants <- function(row) {
   return(row)
 }
 
+cat("Running filter_problematic_snps\n")
 cat("Reading table of variants ", xargs$highQUAL_sites_file, "\n")
 
 highqual_sites <- read_tsv(xargs$highQUAL_sites_file,
@@ -96,7 +97,7 @@ highqual_sites <- read_tsv(xargs$highQUAL_sites_file,
   show_col_types = FALSE
 )
 
-cat("Reading reference fasta ", xargs$ref,"\n")
+cat("Reading reference fasta", xargs$ref,"\n")
 ref <- phylotools::read.fasta(xargs$ref)
 
 # highqual_sites <-
@@ -144,11 +145,11 @@ total_number_of_snps <-
   highqual_sites |>
   nrow()
 
-cat("Following decomposition and removal of indels,", total_number_of_snps, "SNPs remain\n")
+cat("Following decomposition and removal of indels, ", total_number_of_snps, " SNPs remain\n")
 
 window_size <- round(total_ref_length /total_number_of_snps,0)
 
-cat("Rolling window size:", window_size, "\n")
+cat("Rolling window size: ", window_size, "\n")
 
 threshold <- qbinom(0.05/total_ref_length, window_size, 1/window_size, lower.tail = FALSE)
 cat("Threshold SNPs for defining problematic region: ", threshold, "\n")
@@ -204,15 +205,15 @@ problematic_snps <-
     by = join_by(gene == gene, pos == pos)
   )
 
-cat("Identfied", problematic_snps |> nrow(), "problematic SNPs\n")
+cat("Identfied ", problematic_snps |> nrow(), " problematic SNPs\n")
 
 problem_snps_outfile <- paste0(gsub("\\.tsv","", xargs$highQUAL_sites_file), "problem_snps.tsv")
 
-cat("Writing problematic SNPs to", xargs$output_problem,"...")
+cat("Writing problematic SNPs to ", xargs$output_problem,"...")
 write_tsv(problematic_snps, xargs$output_problem)
 cat("Done\n")
 
-cat("Writing filtered SNPs to", xargs$output_filtered, "...")
+cat("Writing filtered SNPs to ", xargs$output_filtered, "...")
 
 # cat(paste0("using lower depth cutoff", xargs$lowercutoff, "\n"))
 # cat(paste0("using upper depth cutoff", xargs$uppercutoff, "\n"))

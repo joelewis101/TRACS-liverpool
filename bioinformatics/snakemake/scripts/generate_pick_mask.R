@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
-library(dplyr)
-library(readr)
-library(stringr)
-library(tidyr)
+suppressMessages(library(argparse))
+suppressMessages(library(dplyr))
+suppressMessages(library(readr))
+suppressMessages(library(stringr))
+suppressMessages(library(tidyr))
+
+options(dplyr.summarise.inform = FALSE)
 
 parser <- ArgumentParser(description= 'Generate a list of sites to mask from depth, het sites and low QUAL sites')
 
@@ -72,21 +74,25 @@ split_variants <- function(row) {
   return(row)
 }
 
+cat("Running generate_pick_mask\n")
 cat("loading data\n")
 
-het_sites <- read_tsv(xargs$het_sites_file, 
-                      col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+het_sites <- read_tsv(xargs$het_sites_file,
+  col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP"),
+  show_col_types = FALSE
 )
 
-lowqual_sites <- read_tsv(xargs$lowQUAL_sites_file, 
-                          col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP")
+lowqual_sites <- read_tsv(xargs$lowQUAL_sites_file,
+  col_names = c("sample", "sequence_type", "gene", "pos", "ref", "alt", "type", "GT", "QUAL", "AO", "RO", "DP"),
+  show_col_types = FALSE
 )
-depth <-  read_tsv(xargs$depth_file, 
-                   col_names = c("sample", "sequence_type", "gene", "pos", "depth")
+depth <- read_tsv(xargs$depth_file,
+  col_names = c("sample", "sequence_type", "gene", "pos", "depth"),
+  show_col_types = FALSE
 )
 
 cat("generating mask file\n")
-cat(paste0("using lower depth cutoff", xargs$lowercutoff, "\n"))
+cat(paste0("using lower depth cutoff ", xargs$lowercutoff, "\n"))
 # cat(paste0("using upper depth cutoff", xargs$uppercutoff, "\n"))
 cat(paste0("sample type: ", xargs$type, "\n"))
 
