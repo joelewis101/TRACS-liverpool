@@ -106,6 +106,6 @@ df_out <-
   select(sample, sequence_type, gene, mapped, unmapped, samtools_lowcov, variants, het_var, low_qual_var, sliding_window_problem_snps)
 
 
-cat(paste0("Writing output tsv", xargs$output, "\n"))
+cat(paste0("Writing output tsv: ", xargs$output, "\n"))
 write_tsv(df_out, xargs$output)
 

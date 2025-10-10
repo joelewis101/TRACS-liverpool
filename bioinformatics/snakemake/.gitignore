@@ -1,8 +1,10 @@
 pipe_test/
 test/
 out/
+snippy_rerun/
 .snakemake/
 *fastq*
+references/
 *.fai
 PS161/
 Reference.fasta
