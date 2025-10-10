@@ -102,7 +102,7 @@ rule low_QUAL_var:
      9
   shell:
       """
-      bcftools view --include 'QUAL < 100' {input.vcf} |
+      bcftools view --include 'QUAL < 100 | FMT/DP<20 | (FMT/AO)/(FMT/DP)<0.85' {input.vcf} |
       vt decompose -s - |
       vt decompose_blocksub - |
       vt normalize -r {input.reference} - |
@@ -121,7 +121,7 @@ rule high_QUAL_var:
      9
   shell:
       """
-      bcftools view --include 'QUAL >= 100' {input.vcf} |
+      bcftools view --include 'QUAL >= 100  && FMT/DP>=20 && (FMT/AO)/(FMT/DP)>=0.85' {input.vcf} |
       vt decompose -s  - |
       vt decompose_blocksub - |
       vt normalize -r {input.reference} - |
@@ -142,7 +142,7 @@ rule filter_problem_variants:
    priority: 8
    shell:
       """
-      ./scripts/filter_problematic_snps.R -v {input.high_qual_var} -p {output.problem_snps} -l 20 -u 5000 -f {output.high_qual_var_filt} -r {input.reference}
+      ./scripts/filter_problematic_snps.R -v {input.high_qual_var} -p {output.problem_snps} -f {output.high_qual_var_filt} -r {input.reference}
       """
 
 #--------------------------------------------------------------------#
@@ -157,7 +157,7 @@ rule generate_pick_masks:
    8
   shell:
       """ 
-      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -l 20 -u 5000 -o {output.msk}
+      scripts/generate_pick_mask.R -t {wildcards.type} -d {input.samtools_depth} -s {input.het_var} -q {input.low_qual_var} -l 20 -o {output.msk}
       """
 
 # -------------------------------------------------------------------#
