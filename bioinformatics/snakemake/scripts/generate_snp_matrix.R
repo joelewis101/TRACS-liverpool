@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 
 parser <- ArgumentParser(description= 'Take the pick_vs_sweep_variants.tsv file and generate a pairwise snp matrix')
 parser$add_argument('--pick_vs_sweep_variants', '-i', help= 'pick vs sweep variant file')

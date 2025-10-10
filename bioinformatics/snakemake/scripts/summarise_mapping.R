@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 
-parser <- ArgumentParser(description= 'Summarise mapping stats')
-parser$add_argument('--samtools_depth', '-s', help= 'samtools depth file')
-parser$add_argument('--het_variants', '-he', help= 'het variants file')
-parser$add_argument('--problem_snps', '-p', help= 'problem snps (from sliding window)')
-parser$add_argument('--high_qual_snps_unfilt', '-hqu', help= 'high qual snps unfiltered')
-parser$add_argument('--high_qual_snps_filt', '-hqf', help= 'high qual snps filtered')
-parser$add_argument('--low_qual_snps', '-lq', help= 'low qual snps')
-parser$add_argument('--output', '-o', help= 'output file')
+parser <- ArgumentParser(description= 'Summarise mapping stats from TRACS MSWEEP pipeline')
+parser$add_argument('--samtools_depth', '-s', help= 'samtools depth file', required = TRUE)
+parser$add_argument('--het_variants', '-he', help= 'het variants file', required = TRUE)
+parser$add_argument('--problem_snps', '-p', help= 'problem snps (from sliding window)', required = TRUE)
+parser$add_argument('--high_qual_snps_unfilt', '-hqu', help= 'high qual snps unfiltered', required = TRUE)
+parser$add_argument('--high_qual_snps_filt', '-hqf', help= 'high qual snps filtered', required = TRUE)
+parser$add_argument('--low_qual_snps', '-lq', help= 'low qual snps', required = TRUE)
+parser$add_argument('--output', '-o', help= 'output file', required = TRUE)
 
 xargs<- parser$parse_args()
 

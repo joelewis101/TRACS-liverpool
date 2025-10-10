@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 suppressMessages(library(dplyr))
 suppressMessages(library(readr))
+options(dplyr.summarise.inform = FALSE)
 
 parser <- ArgumentParser(description= 'Combine two mask files and deduplicate')
 

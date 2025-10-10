@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library(argparse)
+suppressMessages(library(argparse))
 
 parser <- ArgumentParser(description= 'Concatenate all pick variant files by searching recursively in a given directoty')
 
@@ -16,15 +16,16 @@ suppressMessages(library(readr))
 suppressMessages(library(stringr))
 suppressMessages(library(tidyr))
 suppressMessages(library(purrr))
+options(dplyr.summarise.inform = FALSE)
 
 pick_vars <-
-  read_tsv(xargs$pick_variants)
+  read_tsv(xargs$pick_variants, show_col_types = FALSE) 
 
 sweep_vars <-
-  read_tsv(xargs$sweep_variants)
+  read_tsv(xargs$sweep_variants, show_col_types = FALSE)
 
 mask <-
-  read_tsv(xargs$mask)
+  read_tsv(xargs$mask, show_col_types = FALSE)
 
 
 df_out <-
