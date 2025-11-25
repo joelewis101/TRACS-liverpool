@@ -60,3 +60,5 @@ write_csv(
   dfout,
   here("data/processed/sequencing/tracs_single_colony_wgs_manifest.csv")
 )
+
+write_csv(df, "data/processed/sequencing/tracs_samples_manifest.csv")
