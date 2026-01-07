@@ -4,4 +4,6 @@ data/raw/*
 data/processed/redcap
 data/processed/sequencing
 data/processed/micro
+data/processed/summary*
+data/processed/model*
 data/secrets/*
