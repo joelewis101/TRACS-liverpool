@@ -62,3 +62,15 @@ write_csv(
 )
 
 write_csv(df, "data/processed/sequencing/tracs_samples_manifest.csv")
+
+
+df |>
+  filter(sweep_or_wgs == "wgs") |>
+  filter(study == "Companion animal") |>
+  transmute(
+    studyid = study_id,
+    runid = id_run,
+    laneid = lane,
+    plexid = tag_index
+  ) |>
+  write_csv("data/processed/sequencing/tracs_companion_animals_manifest.csv")
