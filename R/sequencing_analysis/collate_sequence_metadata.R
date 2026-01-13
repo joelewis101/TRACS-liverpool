@@ -74,3 +74,9 @@ df |>
     plexid = tag_index
   ) |>
   write_csv("data/processed/sequencing/tracs_companion_animals_manifest.csv")
+
+
+df |>
+  filter(sweep_or_wgs == "wgs") |>
+  filter(study == "Companion animal") |>
+  write_csv("data/processed/sequencing/tracs_companion_animals_manifest_for_sharing.csv")
