@@ -31,7 +31,7 @@ env_loc_df |>
 # TODO - investigate these missing samples
 
 micro_results_df |>
-  filter(sample_type == "Environment") |>
+  filter(sample_type == "Environmental") |>
   select(tracs_id, e_coli, k_pn) |>
   anti_join(
   env_loc_df,
@@ -80,7 +80,19 @@ redcap_sample_df |>
     by = join_by(sample_number == tracs_id)
 )
 
+# A few that are presumably lost samples
 # Yep - TDOD look in to missing sample results for patient samples
+
+# and the othe rway round
+
+micro_results_df |>
+  filter(sample_type == "Stool" | sample_type == "Rectal swab") |>
+  select(tracs_id, e_coli, k_pn) |>
+  anti_join(
+  redcap_sample_df,
+    by = join_by(tracs_id == sample_number))
+
+# fewer that dont link
 
 # irst, get facility 
 
@@ -96,7 +108,7 @@ redcap_adm_df |>
 
 df_out_pt <-
 redcap_sample_df |>
-  pull(record_id)
+#   pull(record_id)
   select(record_id, type_of_sample, date_sample_collected, bed_space_room_number, sample_number) |>
   left_join(
     redcap_adm_df |>
@@ -175,6 +187,6 @@ sequence_manifest_with_metadata <-
     join_by(linking_id == sample_number)
   )
 
-write_csv(df_out_phenotypic, here("data/processed/collated_micro_results_linked_to_metadata.csv"))
+write_csv(df_out_phenotypic, here("data/processed/collated_micro_results_linked_to_metadata.csv")
 
 write_csv(sequence_manifest_with_metadata, here("data/processed/sequencing/tracs_stool_and_env_sample_sequence_ids_with_metadata.csv"))
