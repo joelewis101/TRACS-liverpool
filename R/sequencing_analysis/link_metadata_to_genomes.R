@@ -64,6 +64,7 @@ df_out_env <-
     location = location,
     ward = ward,
     room = room,
+    swab_site = swab_site,
     e_coli = e_coli,
     k_pn = k_pn
   ) |>
@@ -187,6 +188,6 @@ sequence_manifest_with_metadata <-
     join_by(linking_id == sample_number)
   )
 
-write_csv(df_out_phenotypic, here("data/processed/collated_micro_results_linked_to_metadata.csv")
+write_csv(df_out_phenotypic, here("data/processed/collated_micro_results_linked_to_metadata.csv"))
 
 write_csv(sequence_manifest_with_metadata, here("data/processed/sequencing/tracs_stool_and_env_sample_sequence_ids_with_metadata.csv"))
