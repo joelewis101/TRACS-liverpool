@@ -90,7 +90,7 @@ df_pt_metadata |>
       ),
     by = "record_id"
   ) |>
-  select(sex, age, ethnicity, capacity, mean_cfs, admitted_from, animal_exp, overseas_travel, hospital_admissions, abx) |>
+  select(sex, age, ethnicity, capacity, mean_cfs, admitted_from, animal_exp, overseas_travel,location, hospital_admissions, abx) |>
   pretty_tbl_df()
 
     if_else(is.na(abx_start_date), "No", "Yes")
