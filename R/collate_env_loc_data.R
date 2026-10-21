@@ -49,7 +49,7 @@ if (sample_file == "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/20.04.23 TR
     mutate(
       week = 2,
       location = "Longmoor house",
-      site_number = site_number,
+      site_number = as.character(site_number),
       ward = ward_number,
       room = room,
       swab_number = gsub("TRACS_E_[0]+", "TRACS_2_ES_", swab_number),
@@ -59,12 +59,33 @@ if (sample_file == "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/20.04.23 TR
       .keep = "none"
     )
 
+head(df) |> print()
 listout[[1]] <- df
 
 } else if (
 sample_file == "Aintree/Visit 1_W29_8.05.23/Week 4_15.05.23/17.05.23 TRACS Environmental Sample Sheet.xlsx") {
-   cat("skipping this sheet - needs data reconciliation - follow up with claudia and esther")
-      listout[[i]] <- NULL
+
+  df <-
+read_xlsx(here("data/raw/sampling data", sample_file),
+      sheet = 3,
+      col_types = "text"
+    ) |>
+    janitor::clean_names() |>
+    filter(!is.na(swab_number)) |>
+    mutate(
+    week = 4,
+  location = "Aintree",
+  site_number = as.character(site_number),
+  ward = "29",
+  room = room,
+  swab_number = paste0("TRACS_2_ES_", swab_number),
+  swab_site = swab_site,
+  pbs_number = pbs_number,
+  date = date,
+  .keep = "none")
+
+  head(df) |> print()
+  listout[[i]] <- df
 
   } else {
 
