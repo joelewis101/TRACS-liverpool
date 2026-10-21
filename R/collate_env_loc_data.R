@@ -60,7 +60,7 @@ if (sample_file == "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/20.04.23 TR
     )
 
 head(df) |> print()
-listout[[1]] <- df
+listout[[i]] <- df
 
 } else if (
 sample_file == "Aintree/Visit 1_W29_8.05.23/Week 4_15.05.23/17.05.23 TRACS Environmental Sample Sheet.xlsx") {
@@ -127,7 +127,8 @@ enviro_out_df <- bind_rows(listout) |>
   mutate(date = 
     if_else(grepl("\\.", date),
     dmy(date),
-    janitor::excel_numeric_to_date(as.numeric(date))))
+    janitor::excel_numeric_to_date(as.numeric(date)))) |>
+  distinct()
 
 
 outfile <- here("data/processed", paste0("micro_env_sample_loc", datetime, ".csv"))
