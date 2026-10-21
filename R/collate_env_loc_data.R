@@ -31,32 +31,86 @@ for (sample_file in sample_files2) {
 
   sheets <- excel_sheets(here("data/raw/Sampling data", sample_file))
 
-if (sample_file == "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/20.04.23 TRACS Environmental Sample Sheet.xlsx" |
+if (sample_file == "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/20.04.23 TRACS Environmental Sample Sheet.xlsx") {
+
+  df <-
+    read_xlsx(here("data/raw/sampling data", sample_file),
+      sheet = 1,
+      col_types = "text"
+    ) |>
+    janitor::clean_names() |>
+    filter(!is.na(swab_number)) |>
+    left_join(
+      read_csv(here("data/raw/Sampling data", "Longmoor house/Visit 1_ 17.04.23/Week 2_17.04.23/week_2_reconciliation.csv")) |>
+        janitor::clean_names() |>
+        select(swab_number, site_number, ward, room, swab_site),
+      by = "swab_number"
+    ) |>
+    mutate(
+      week = 2,
+      location = "Longmoor house",
+      site_number = as.character(site_number),
+      ward = ward_number,
+      room = room,
+      swab_number = gsub("TRACS_E_[0]+", "TRACS_2_ES_", swab_number),
+      swab_site = swab_site,
+      pbs_number = pbs_number,
+      date = date,
+      .keep = "none"
+    )
+
+head(df) |> print()
+listout[[i]] <- df
+
+} else if (
 sample_file == "Aintree/Visit 1_W29_8.05.23/Week 4_15.05.23/17.05.23 TRACS Environmental Sample Sheet.xlsx") {
-   cat("skipping this sheet - needs data reconciliation - follow up with claudia and esther")
-      listout[[i]] <- NULL
+
+  df <-
+read_xlsx(here("data/raw/sampling data", sample_file),
+      sheet = 3,
+      col_types = "text"
+    ) |>
+    janitor::clean_names() |>
+    filter(!is.na(swab_number)) |>
+    mutate(
+    week = 4,
+  location = "Aintree",
+  site_number = as.character(site_number),
+  ward = "29",
+  room = room,
+  swab_number = paste0("TRACS_2_ES_", swab_number),
+  swab_site = swab_site,
+  pbs_number = pbs_number,
+  date = date,
+  .keep = "none")
+
+  head(df) |> print()
+  listout[[i]] <- df
 
   } else {
 
   df <-
-   map(sheets, \(x)
+    map(sheets, \(x)
     read_xlsx(here("data/raw/sampling data", sample_file),
       sheet = x,
       col_types = "text"
     ) |>
-    janitor::clean_names() |>
-	rename_with(\(x) if_else(x == "x3769", "site_number", x))) |> 
-      bind_rows() |>
-      mutate(location = location,
-	week = as.numeric(gsub("Week ", "", week))) |>
-      relocate(c(week, location), .before = everything()) |>
-      filter(!is.na(swab_number)) |>
+      janitor::clean_names() |>
+      rename_with(\(x) if_else(x == "x3769", "site_number", x))) |>
+    bind_rows() |>
+    mutate(
+      location = location,
+      week = as.numeric(gsub("Week ", "", week))
+    ) |>
+    relocate(c(week, location), .before = everything()) |>
+    filter(!is.na(swab_number)) |>
     mutate(
       swab_number =
         if_else(!grepl("^[0-9]", swab_number),
           swab_number,
           paste0("TRACS_2_ES_", swab_number)
-        )) 
+        )
+    )
 
   head(df) |> print()
   listout[[i]] <- df
@@ -73,7 +127,8 @@ enviro_out_df <- bind_rows(listout) |>
   mutate(date = 
     if_else(grepl("\\.", date),
     dmy(date),
-    janitor::excel_numeric_to_date(as.numeric(date))))
+    janitor::excel_numeric_to_date(as.numeric(date)))) |>
+  distinct()
 
 
 outfile <- here("data/processed", paste0("micro_env_sample_loc", datetime, ".csv"))
