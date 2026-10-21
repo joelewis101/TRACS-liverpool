@@ -8,6 +8,7 @@ data/processed/summary*
 data/processed/model*
 data/processed/collated*
 data/secrets/*
+data/processed/archive
 
 R/msm/hmm_bin_2s_ranef
 R/msm/tracs_msm_mod_nocovs
