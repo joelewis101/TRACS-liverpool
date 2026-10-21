@@ -9,15 +9,57 @@ redcap_adm_df <-
   read_csv(here("data/processed/redcap/admission_processed20250717-1055.csv"))
 
 micro_results_df <-
-  read_csv(here("data/processed/micro/micro_processed20240828-1524.csv"))
+  read_csv(here("data/processed/micro/micro_processed20261021-1357.csv"))
 
 env_loc_df <-
-  read_csv(here("data/processed/micro/micro_env_sample_loc20240828-1752.csv"))
+  read_csv(here("data/processed/micro/micro_env_sample_loc20261021-1531.csv"))
 
 fastq_manifest <- 
   read_csv(here("data/processed/sequencing/tracs_samples_manifest.csv"))
 
 # link micro with loc ----------------------------------
+
+# There are a number of duplciations in subsequent week spreadsheets (presumably
+# where people have gone back to collect missing samples) - remove
+# also remove duplicate sample IDs woth the same site id - these mostly just
+# have slightly differenty text in the location - just pick one 
+
+env_loc_df <-
+env_loc_df |>
+  select(-week) |>
+  distinct() |>
+  group_by(swab_number, location, site_number) |>
+  slice(1)
+
+# implement sally's manual reconciliation
+
+duplicates_corrected <-
+  read_xlsx(here("data/raw/Missing_and_duplicate_samples.xlsx"),
+            sheet = 5) |>
+  janitor::clean_names() |>
+  filter(corrections_name != "TRACS_2_ES_1288") |>
+  mutate(original_swab_number = tracs_id,
+         corrected_swab_number = corrections_name,
+         site_number = as.numeric(str_extract(corrections_location, "^[0-9]+(?=_)")),
+         location = gsub("_.+$","", str_extract(corrections_location, "(?<=_).+")),
+         .keep = "none")
+
+  env_loc_df <-
+    env_loc_df |>
+    left_join(duplicates_corrected,
+      by = join_by(swab_number == original_swab_number, location, site_number)
+    ) |>
+    mutate(swab_number = if_else(!is.na(corrected_swab_number), corrected_swab_number, swab_number)) |>
+    select(-c(corrected_swab_number))
+
+  # how many duplicates
+
+  env_loc_df |>
+    group_by(swab_number) |>
+    filter(n() > 1)
+
+  micro_results_df |>
+    filter(duplicated(tracs_id))
 
 # missing samples in micro results df, that are present in the environment
 # location log - needs a look at
@@ -28,36 +70,84 @@ env_loc_df |>
     by = join_by(swab_number == tracs_id)
 )
 
-# TODO - investigate these missing samples
+
+# TODO - investigate these missing samples; though there is likely not much to
+# be done
+
+# link micro results to environmental location by tracs ID and by location
+# (this latter screens out some errors)
 
 micro_results_df |>
   filter(sample_type == "Environmental") |>
-  select(tracs_id, e_coli, k_pn) |>
+  select(tracs_id, location, e_coli, k_pn) |>
   anti_join(
   env_loc_df,
-    by = join_by(tracs_id == swab_number)
-)
+    by = join_by(tracs_id == swab_number, location)
+) |> 
+  arrange(tracs_id)
+
+# drop duplicated IDs after joining - ie tracs IDs that have 2 different IDs in
+# env_loc_df
+# There is no real way to tell which is real
+
+micro_results_df |>
+  left_join(
+  env_loc_df,
+    by = join_by(tracs_id == swab_number, location)
+) |> 
+  arrange(tracs_id) |>
+  # filter(grepl("1205", tracs_id))
+  filter(duplicated(tracs_id)) |> pull(tracs_id) -> dups
+
+length(dups)
+
+# 33 duplicates
+micro_results_df |>
+  filter(sample_type == "Environmental") |>
+  select(tracs_id, location, e_coli, k_pn) |>
+  left_join(
+  env_loc_df |> filter(!swab_number %in% dups),
+    by = join_by(tracs_id == swab_number, location)
+) |> 
+  arrange(tracs_id) |>
+  filter(is.na(site_number)) |> pull(tracs_id) |> sort()
+
+# 98 missing in total
+
+
+micro_results_df |>
+  filter(sample_type == "Environmental") |>
+  select(tracs_id, location, e_coli, k_pn) |>
+  left_join(
+  env_loc_df |> filter(!swab_number %in% dups),
+    by = join_by(tracs_id == swab_number, location)
+) |> 
+  arrange(tracs_id) |>
+  filter(is.na(site_number)) |> nrow()
+
 
 df_out_env <-
-  env_loc_df |>
+micro_results_df |>
+  filter(sample_type == "Environmental") |>
+  select(tracs_id, location, e_coli, k_pn) |>
   left_join(
-    select(micro_results_df, sample_type, tracs_id, e_coli, k_pn),
-    by = join_by(swab_number == tracs_id)
-  ) |>
+  env_loc_df |> filter(!swab_number %in% dups),
+    by = join_by(tracs_id == swab_number, location)) |>
   select(
     location,
     site_number,
     ward,
     room,
     swab_site,
-    swab_number,
+    tracs_id,
     date,
     e_coli,
     k_pn
   ) |>
+  # filter(!is.na(site_number)) |>
   transmute(
     record_id = paste0(site_number, "_", location, if_else(!is.na(ward), paste0("_", ward), "")),
-    sample_number = swab_number,
+    sample_number = tracs_id,
     source = "Environment",
     type_of_sample = "Environment",
     date_collected = date,
@@ -153,16 +243,28 @@ redcap_sample_df |>
   )
 
 # put em together - there are some sampleIDs that have two rows
-# take the first
+# I've put an issue in the github - can double check
+
+    df_out_pt |>
+      distinct() |>
+      group_by(sample_number) |>
+      filter(n() > 1)
+
 
 df_out_phenotypic <-
   bind_rows(
     df_out_env,
-    df_out_pt
-  ) |>
-    unique() |>
-    group_by(sample_number) |>
-    slice(1)
+    df_out_pt |>
+      distinct() |>
+      group_by(sample_number) |>
+      filter(n() == 1)
+  )
+
+# check for dups
+
+df_out_phenotypic |>
+  group_by(sample_number) |>
+  filter(n() > 1)
 
 # any fastqs that *don't* have a record in the phenotypic df?
 
