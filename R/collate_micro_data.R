@@ -449,6 +449,15 @@ if (nrow(tracs_id_dups) > 0) {
   error("duplicated tracs id in final dataframe!")
 }
 
+# fix TRACS IDs
+
+out_df <-
+out_df |>
+  mutate(tracs_id = gsub("TRACS_E_[0]*", "TRACS_2_ES_", tracs_id)) |>
+  mutate(tracs_id = gsub("TRACS_2_ES_[0]*", "TRACS_2_ES_", tracs_id)) |>
+  arrange(tracs_id) |>
+  pull(tracs_id)
+
 # write
 
 
